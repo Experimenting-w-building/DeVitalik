@@ -8,9 +8,6 @@ from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
 from src.action_handler import execute_action
-import src.actions.twitter_actions  
-import src.actions.echochamber_actions
-import src.actions.solana_actions
 from datetime import datetime
 
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
@@ -39,6 +36,11 @@ class ZerePyAgent:
             self.connection_manager = ConnectionManager(agent_dict["config"])
             self.use_time_based_weights = agent_dict["use_time_based_weights"]
             self.time_based_multipliers = agent_dict["time_based_multipliers"]
+            
+            has_discord_tasks = any("discord" in task["name"] for task in agent_dict.get("tasks", []))
+            print(f"Has discod tasks: {has_discord_tasks}")
+            discord_config = next((config for config in agent_dict["config"] if config["name"] == "discord"), None)
+            print(f"discod config: {discord_config}")
 
             has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
             
@@ -201,6 +203,9 @@ class ZerePyAgent:
                     
                     action = self.select_action(use_time_based_weights=self.use_time_based_weights)
                     action_name = action["name"]
+                    print("IN THE AGENT ACTION LOOP")
+                    print(f"AGENT ACTION: {action}")
+                    print(f"AGENT ACTION NAME: {action_name}")
 
                     # PERFORM ACTION
                     success = execute_action(self, action_name)
