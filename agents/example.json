@@ -90,13 +90,18 @@
       "name": "discord",
       "message_read_count": 10,
       "message_emoji_name": "❤️",
-      "server_id": "1327792083599228968"
+      "server_id": "1234567890",
+      "default_channel_id": "1234567890",
+      "discord_message_interval": 5400
+
     }
   ],
   "tasks": [
     {"name": "post-tweet", "weight": 1},
     {"name": "reply-to-tweet", "weight": 1},
-    {"name": "like-tweet", "weight": 1}
+    {"name": "like-tweet", "weight": 1},
+    {"name": "post-discord-message", "weight": 1},
+    {"name": "reply-to-discord-message", "weight": 1}
   ],
   "use_time_based_weights": false,
   "time_based_multipliers": {

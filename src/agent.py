@@ -10,6 +10,13 @@ from src.helpers import print_h_bar
 from src.action_handler import execute_action
 from datetime import datetime
 
+# Actions required to be imported for runtime initialization
+import src.actions.discord_actions
+import src.actions.twitter_actions  
+import src.actions.echochamber_actions
+import src.actions.solana_actions
+import src.actions.discord_actions
+
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
 logger = logging.getLogger("agent")
@@ -37,20 +44,26 @@ class ZerePyAgent:
             self.use_time_based_weights = agent_dict["use_time_based_weights"]
             self.time_based_multipliers = agent_dict["time_based_multipliers"]
             
+            # Discord configs
+            
+            # Discord configuration setup
             has_discord_tasks = any("discord" in task["name"] for task in agent_dict.get("tasks", []))
-            print(f"Has discod tasks: {has_discord_tasks}")
             discord_config = next((config for config in agent_dict["config"] if config["name"] == "discord"), None)
-            print(f"discod config: {discord_config}")
+            print(f"discord config: {discord_config}")
+            self.message_read_count = discord_config["message_read_count"]
+            self.message_emoji_name = discord_config["message_emoji_name"]
+            self.server_id = discord_config["server_id"]
+            self.default_channel_id = discord_config["default_channel_id"]
+            self.discord_message_interval = discord_config["discord_message_interval"]
 
+            # Twitter configuration setup
             has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
-            
             twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
-            
             if has_twitter_tasks and twitter_config:
                 self.tweet_interval = twitter_config.get("tweet_interval", 900)
                 self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
 
-            # Extract Echochambers config
+            # Echochambers configuration setup
             echochambers_config = next((config for config in agent_dict["config"] if config["name"] == "echochambers"), None)
             if echochambers_config:
                 self.echochambers_message_interval = echochambers_config.get("message_interval", 60)
@@ -168,11 +181,11 @@ class ZerePyAgent:
         logger.info("Press Ctrl+C at any time to stop the loop.")
         print_h_bar()
 
-        time.sleep(2)
-        logger.info("Starting loop in 5 seconds...")
-        for i in range(5, 0, -1):
-            logger.info(f"{i}...")
-            time.sleep(1)
+        # time.sleep(2)
+        # logger.info("Starting loop in 5 seconds...")
+        # for i in range(5, 0, -1):
+        #     logger.info(f"{i}...")
+        #     time.sleep(1)
 
         try:
             while True:
@@ -203,9 +216,6 @@ class ZerePyAgent:
                     
                     action = self.select_action(use_time_based_weights=self.use_time_based_weights)
                     action_name = action["name"]
-                    print("IN THE AGENT ACTION LOOP")
-                    print(f"AGENT ACTION: {action}")
-                    print(f"AGENT ACTION NAME: {action_name}")
 
                     # PERFORM ACTION
                     success = execute_action(self, action_name)

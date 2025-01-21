@@ -166,6 +166,11 @@ class DiscordConnection(BaseConnection):
                 ],
                 description="List all the channels for a specified discord server",
             ),
+            "get-bot-username": Action(
+                name="get-bot-username",
+                parameters=[],
+                description="Get the bot's username",
+            ),
         }
 
     def configure(self) -> bool:
@@ -323,6 +328,10 @@ class DiscordConnection(BaseConnection):
 
         logger.info("Reacted to message successfully")
         return
+    
+    def get_bot_username(self) -> str:
+        return self.bot_username
+        
 
     def _format_reply_message(self, reply_message: dict) -> dict:
         """Helper method to format reply messages"""
@@ -356,6 +365,7 @@ class DiscordConnection(BaseConnection):
         """Helper method to format messages"""
         formatted_messages = []
         for message in messages:
+            # print(json.dumps(message, indent=4, separators=(',', ': ')))
             mentions = []
             for mention in message["mentions"]:
                 mentions.append({"id": mention["id"], "username": mention["username"]})
@@ -366,6 +376,7 @@ class DiscordConnection(BaseConnection):
                 "message": message["content"],
                 "timestamp": message["timestamp"],
                 "mentions": mentions,
+                "referenced_message": message.get("referenced_message", [])
             }
             formatted_messages.append(formatted_message)
         return formatted_messages
