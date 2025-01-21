@@ -44,17 +44,15 @@ class ZerePyAgent:
             self.use_time_based_weights = agent_dict["use_time_based_weights"]
             self.time_based_multipliers = agent_dict["time_based_multipliers"]
             
-            # Discord configs
-            
             # Discord configuration setup
             has_discord_tasks = any("discord" in task["name"] for task in agent_dict.get("tasks", []))
             discord_config = next((config for config in agent_dict["config"] if config["name"] == "discord"), None)
-            print(f"discord config: {discord_config}")
-            self.message_read_count = discord_config["message_read_count"]
-            self.message_emoji_name = discord_config["message_emoji_name"]
-            self.server_id = discord_config["server_id"]
-            self.default_channel_id = discord_config["default_channel_id"]
-            self.discord_message_interval = discord_config["discord_message_interval"]
+            if has_discord_tasks and discord_config:
+                self.message_read_count = discord_config["message_read_count"]
+                self.message_emoji_name = discord_config["message_emoji_name"]
+                self.server_id = discord_config["server_id"]
+                self.default_channel_id = discord_config["default_channel_id"]
+                self.discord_message_interval = discord_config["discord_message_interval"]
 
             # Twitter configuration setup
             has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
