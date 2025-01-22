@@ -126,3 +126,21 @@ devitalik/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Social Enhancements Quick Start
+
+Using the social enhancement features is straightforward with the standard installation. If you run into any issues:
+
+1. Make sure you have your Twitter API key in `.env`:
+```
+TWITTER_API_KEY=your_key_here
+```
+Note: DexScreener API doesn't require an API key (rate limited to 300 requests/minute)
+
+2. For sentiment analysis, you might need to download NLTK data:
+```python
+import nltk
+nltk.download('vader_lexicon')
+```
+
+That's it! Everything else is handled by the Poetry installation.
