@@ -66,6 +66,7 @@ def reply_to_tweet(agent, **kwargs):
         available_tweets = [
             t for t in agent.state["timeline_tweets"] 
             if t.get('id') not in agent.state["responded_tweets"]
+            and t.get('author_username', '').lower() != agent.username.lower()  # Don't reply to our own tweets
         ]
         
         if not available_tweets:
