@@ -1,0 +1,69 @@
+{
+    "name": "track_influencer_activity",
+    "description": "Monitor crypto influencer activity and analyze market impact",
+    "triggers": ["new_tweet", "market_movement"],
+    "enabled": true,
+    "config": {
+        "influencers": [
+            {
+                "username": "VitalikButerin",
+                "importance": "high",
+                "topics": ["ethereum", "scaling", "L2", "rollups"]
+            },
+            {
+                "username": "cz_binance",
+                "importance": "high",
+                "topics": ["binance", "trading", "regulation"]
+            }
+        ],
+        "market_threshold": 5.0 
+    },
+    "actions": [
+        {
+            "name": "monitor_tweets",
+            "connection": "twitterapi",
+            "action": "get-user-tweets",
+            "params": {
+                "username": "{{trigger.username}}",
+                "limit": 5
+            }
+        },
+        {
+            "name": "analyze_engagement",
+            "connection": "twitter",
+            "action": "get-tweet-metrics",
+            "params": {
+                "tweet_ids": "{{recent_tweet_ids}}"
+            }
+        },
+        {
+            "name": "check_token_impact",
+            "connection": "dexscreener",
+            "action": "get-pair-info",
+            "params": {
+                "tokens": "{{extract_token_mentions}}"
+            }
+        }
+    ],
+    "post_processing": {
+        "analyze_sentiment": true,
+        "detect_token_mentions": true,
+        "correlation_analysis": {
+            "timeframe": "1h",
+            "metrics": ["price", "volume", "social_engagement"]
+        },
+        "alert_conditions": {
+            "sentiment_threshold": 0.7,
+            "engagement_threshold": 1000,
+            "price_impact": 3.0
+        }
+    },
+    "notifications": {
+        "telegram": true,
+        "discord": true,
+        "conditions": {
+            "min_importance": "medium",
+            "min_confidence": 0.8
+        }
+    }
+} 

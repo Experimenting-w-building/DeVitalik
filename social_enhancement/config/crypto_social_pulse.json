@@ -1,0 +1,58 @@
+{
+    "name": "crypto_social_pulse",
+    "description": "Monitor crypto-related social activity across Twitter and Farcaster",
+    "schedule": "0 * * * *",
+    "enabled": true,
+    "config": {
+        "token_watchlist": ["$ETH", "$BTC", "$SOL", "$MATIC"],
+        "min_engagement": 10,
+        "sentiment_threshold": 0.6
+    },
+    "actions": [
+        {
+            "name": "fetch_twitter_data",
+            "connection": "twitterapi",
+            "action": "search-tweets",
+            "params": {
+                "query": "{{join token_watchlist ' OR '}} lang:en",
+                "limit": 100
+            }
+        },
+        {
+            "name": "fetch_influencer_data",
+            "connection": "twitter",
+            "action": "get-user-tweets",
+            "params": {
+                "usernames": ["VitalikButerin", "cz_binance", "SBF_FTX"],
+                "limit": 10
+            }
+        },
+        {
+            "name": "fetch_farcaster_data",
+            "connection": "farcaster",
+            "action": "search-casts",
+            "params": {
+                "query": "{{token_watchlist}}",
+                "limit": 50
+            }
+        },
+        {
+            "name": "analyze_market_data",
+            "connection": "dexscreener",
+            "action": "search-token",
+            "params": {
+                "tokens": "{{extract_mentioned_tokens}}"
+            }
+        }
+    ],
+    "post_processing": {
+        "combine_data": true,
+        "calculate_sentiment": true,
+        "store_metrics": true,
+        "alert_thresholds": {
+            "sentiment_change": 0.2,
+            "volume_change": 20,
+            "mention_spike": 50
+        }
+    }
+} 

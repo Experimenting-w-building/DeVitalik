@@ -1,0 +1,38 @@
+{
+    "name": "content_generation",
+    "description": "Generate engaging content about AI agent development and automation",
+    "schedule": {
+        "market_banter": [
+            {"time": "09:30", "description": "Morning market insights"},
+            {"time": "16:30", "description": "Evening market recap"}
+        ],
+        "tech_insight": [
+            {"time": "11:00", "description": "Developer tooling insights"},
+            {"time": "14:00", "description": "AI/Automation trends"},
+            {"time": "19:00", "description": "Evening tech roundup"}
+        ],
+        "degen_post": [
+            {"time": "12:30", "description": "Midday engagement"},
+            {"time": "17:30", "description": "Evening engagement"}
+        ]
+    },
+    "config": {
+        "min_market_relevance": 0.6,
+        "min_tech_relevance": 0.7,
+        "engagement_threshold": 50,
+        "content_preferences": {
+            "tech_focus": ["ai", "automation", "development", "tools"],
+            "market_focus": ["defi", "web3", "blockchain"],
+            "style": {
+                "tone": "curious_builder",
+                "formality": "casual_professional",
+                "max_length": 240
+            }
+        }
+    },
+    "context_sources": {
+        "market": ["dexscreener"],
+        "social": ["twitter", "twitterapi"],
+        "tech": ["github", "news"]
+    }
+} 
