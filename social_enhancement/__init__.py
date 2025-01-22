@@ -4,6 +4,7 @@ Extends ZerePy's core functionality with advanced social interaction capabilitie
 """
 
 from .social_manager import SocialManager
-from .interaction_handlers import InteractionHandler
+from .analyzers.content_analyzer import ContentAnalyzer
+from .processors.task_processor import TaskProcessor
 
-__all__ = ['SocialManager', 'InteractionHandler'] 
+__all__ = ['SocialManager', 'ContentAnalyzer', 'TaskProcessor'] 

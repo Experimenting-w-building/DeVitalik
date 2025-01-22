@@ -15,6 +15,8 @@ from src.connections.galadriel_connection import GaladrielConnection
 from src.connections.discord_connection import DiscordConnection
 from src.connections.allora_connection import AlloraConnection
 from src.connections.ethereum_connection import EthereumConnection
+from src.connections.github_connection import GitHubConnection
+from src.connections.twitterapi_connection import TwitterAPIConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -55,6 +57,10 @@ class ConnectionManager:
             return AlloraConnection
         elif class_name == "ethereum":
             return EthereumConnection
+        elif class_name == "github":
+            return GitHubConnection
+        elif class_name == "twitterapi":
+            return TwitterAPIConnection
         return None
 
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:

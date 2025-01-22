@@ -2,10 +2,9 @@ from typing import Optional, Dict, Any, List
 import logging
 import json
 import os
-from sentence_transformers import SentenceTransformer
-from zerepy.core import BaseAgent
 from .analyzers.content_analyzer import ContentAnalyzer
-from .connections.twitter_api import TwitterAPIConnection
+from src.connections.twitterapi_connection import TwitterAPIConnection
+from src.connections.github_connection import GitHubConnection
 from .processors.task_processor import TaskProcessor
 
 logger = logging.getLogger("social_enhancement.social_manager")
@@ -16,28 +15,32 @@ class SocialManager:
     Acts as a bridge between your custom social logic and ZerePy's core
     """
     
-    def __init__(self, agent: BaseAgent):
+    def __init__(self, agent: Any):
+        """Initialize social enhancement manager"""
         self.agent = agent
+        self.content_analyzer = ContentAnalyzer()
+        self.task_processor = TaskProcessor()
         self._interaction_history = {}
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.content_analyzer = ContentAnalyzer(self.embedding_model)
-        self.task_processor = TaskProcessor(agent.connection_manager)
+        self._load_configs()
         
-        # Load configurations
-        self.configs = self._load_configs()
-        
-    def _load_configs(self) -> Dict[str, Any]:
+    def _load_configs(self):
         """Load all configuration files"""
         config_dir = os.path.join(os.path.dirname(__file__), 'config')
-        configs = {}
+        self.configs = {}
         
         for filename in os.listdir(config_dir):
             if filename.endswith('.json'):
                 with open(os.path.join(config_dir, filename)) as f:
-                    configs[filename[:-5]] = json.load(f)
+                    self.configs[filename[:-5]] = json.load(f)
                     
-        return configs
-        
+    async def analyze_social_context(self, twitter_conn, twitterapi_conn):
+        """Analyze social context using the content analyzer"""
+        return await self.content_analyzer.analyze_social_context(twitter_conn, twitterapi_conn)
+
+    async def analyze_market_context(self, dexscreener_conn):
+        """Analyze market context using the content analyzer"""
+        return await self.content_analyzer.analyze_market_context(dexscreener_conn)
+                    
     def enhance_agent(self):
         """
         Enhances the agent with social capabilities without modifying core functionality
@@ -45,19 +48,6 @@ class SocialManager:
         # Attach social methods to agent instance without modifying the class
         self.agent.social = self
         
-        # Register social connections if not already present
-        self._register_social_connections()
-        
-    def _register_social_connections(self):
-        """Register social-specific connections"""
-        if 'twitterapi' not in self.agent.connection_manager.connections:
-            self.agent.connection_manager.register_connection(
-                'twitterapi',
-                TwitterAPIConnection({
-                    'api_key': os.getenv('TWITTER_API_KEY')
-                })
-            )
-            
     async def handle_interaction(self, context: Dict[str, Any]) -> Optional[str]:
         """
         Main entry point for social interactions

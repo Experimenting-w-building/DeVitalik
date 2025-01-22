@@ -4,6 +4,7 @@ from typing import Dict, Any, List, Tuple
 from requests_oauthlib import OAuth1Session
 from dotenv import set_key, load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.action_handler import register_action
 from src.helpers import print_h_bar
 
 logger = logging.getLogger("connections.twitter_connection")
@@ -363,51 +364,62 @@ class TwitterConnection(BaseConnection):
         method = getattr(self, method_name)
         return method(**kwargs)
 
-    def read_timeline(self, count: int = None, **kwargs) -> list:
-        """Read tweets from the user's timeline"""
-        if count is None:
-            count = self.config["timeline_read_count"]
+    @register_action("read-timeline")
+    def read_timeline(self, params: List[Any] = None, **kwargs) -> List[Dict[str, Any]]:
+        """Read tweets from user's timeline with engagement metrics"""
+        try:
+            # Handle both params list and keyword arguments
+            count = None
+            if params and params[0]:
+                count = params[0]
+            elif 'count' in kwargs:
+                count = kwargs['count']
             
-        logger.debug(f"Reading timeline, count: {count}")
-        credentials = self._get_credentials()
-
-        params = {
-            "tweet.fields": "created_at,author_id,attachments",
-            "expansions": "author_id",
-            "user.fields": "name,username",
-            "max_results": count
-        }
-
-        response = self._make_request(
-            'get',
-            f"users/{credentials['TWITTER_USER_ID']}/timelines/reverse_chronological",
-            params=params
-        )
-
-        tweets = response.get("data", [])
-        user_info = response.get("includes", {}).get("users", [])
-
-        user_dict = {
-            user['id']: {
-                'name': user['name'],
-                'username': user['username']
+            if count is None:
+                count = self.config["timeline_read_count"]
+            
+            # Get timeline with metrics and author info
+            response = self._make_request(
+                'get',
+                'tweets/search/recent',
+                params={
+                    'query': 'from:VitalikButerin OR to:VitalikButerin',
+                    'max_results': count,
+                    'tweet.fields': 'created_at,public_metrics,author_id',
+                    'expansions': 'author_id',
+                    'user.fields': 'username'
+                }
+            )
+            
+            if not response.get('data'):
+                logger.warning("No tweets found in timeline")
+                return []
+                
+            # Create author lookup map
+            authors = {
+                user['id']: user['username'] 
+                for user in response.get('includes', {}).get('users', [])
             }
-            for user in user_info
-        }
-
-        for tweet in tweets:
-            author_id = tweet['author_id']
-            author_info = user_dict.get(author_id, {
-                'name': "Unknown",
-                'username': "Unknown"
-            })
-            tweet.update({
-                'author_name': author_info['name'],
-                'author_username': author_info['username']
-            })
-
-        logger.debug(f"Retrieved {len(tweets)} tweets")
-        return tweets
+            
+            # Process tweets with author info and metrics
+            tweets = []
+            for tweet in response['data']:
+                author_id = tweet.get('author_id')
+                tweets.append({
+                    'id': tweet['id'],
+                    'text': tweet['text'],
+                    'created_at': tweet['created_at'],
+                    'author_id': author_id,
+                    'author_username': authors.get(author_id, 'unknown'),
+                    'public_metrics': tweet.get('public_metrics', {})
+                })
+                
+            logger.info(f"Retrieved {len(tweets)} tweets from timeline")
+            return tweets
+            
+        except Exception as e:
+            logger.error(f"Failed to read timeline: {str(e)}")
+            return []
 
     def get_latest_tweets(self,
                           username: str,

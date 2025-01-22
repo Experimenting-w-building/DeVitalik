@@ -8,68 +8,50 @@ from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
 from src.action_handler import execute_action
+from social_enhancement.social_manager import SocialManager
 import src.actions.twitter_actions  
 import src.actions.echochamber_actions
 import src.actions.solana_actions
 from datetime import datetime
+from typing import Optional, Dict, Any
 
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
-logger = logging.getLogger("agent")
+logger = logging.getLogger("zerepy.agent")
 
 class ZerePyAgent:
-    def __init__(
-            self,
-            agent_name: str
-    ):
+    def __init__(self, agent_name: str = "devitalik"):
+        """Initialize ZerePy agent with configuration"""
+        self.agent_name = agent_name
+        self.agent_config = self._load_config()
+        self.logger = logger  # Use the module-level logger
+        # Initialize connection manager with just the connections config
+        self.connection_manager = ConnectionManager(self.agent_config.get("config", []))
+        self.social = SocialManager(self)
+        self.state = {}
+        self._system_prompt = None
+        self.is_llm_set = False
+        
+    @property
+    def name(self) -> str:
+        """Get the agent's name"""
+        return self.agent_name
+        
+    def _load_config(self) -> Dict[str, Any]:
+        """Load agent configuration from JSON file"""
+        config_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "agents",
+            f"{self.agent_name}.json"
+        )
+        
         try:
-            agent_path = Path("agents") / f"{agent_name}.json"
-            agent_dict = json.load(open(agent_path, "r"))
-
-            missing_fields = [field for field in REQUIRED_FIELDS if field not in agent_dict]
-            if missing_fields:
-                raise KeyError(f"Missing required fields: {', '.join(missing_fields)}")
-
-            self.name = agent_dict["name"]
-            self.bio = agent_dict["bio"]
-            self.traits = agent_dict["traits"]
-            self.examples = agent_dict["examples"]
-            self.example_accounts = agent_dict["example_accounts"]
-            self.loop_delay = agent_dict["loop_delay"]
-            self.connection_manager = ConnectionManager(agent_dict["config"])
-            self.use_time_based_weights = agent_dict["use_time_based_weights"]
-            self.time_based_multipliers = agent_dict["time_based_multipliers"]
-
-            has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
-            
-            twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
-            
-            if has_twitter_tasks and twitter_config:
-                self.tweet_interval = twitter_config.get("tweet_interval", 900)
-                self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
-
-            # Extract Echochambers config
-            echochambers_config = next((config for config in agent_dict["config"] if config["name"] == "echochambers"), None)
-            if echochambers_config:
-                self.echochambers_message_interval = echochambers_config.get("message_interval", 60)
-                self.echochambers_history_count = echochambers_config.get("history_read_count", 50)
-
-            self.is_llm_set = False
-
-            # Cache for system prompt
-            self._system_prompt = None
-
-            # Extract loop tasks
-            self.tasks = agent_dict.get("tasks", [])
-            self.task_weights = [task.get("weight", 0) for task in self.tasks]
-            self.logger = logging.getLogger("agent")
-
-            # Set up empty agent state
-            self.state = {}
-
+            with open(config_path, 'r') as f:
+                return json.load(f)
         except Exception as e:
-            logger.error("Could not load ZerePy agent")
-            raise e
+            logger.error(f"Failed to load agent config: {e}")
+            return {}
 
     def _setup_llm_provider(self):
         # Get first available LLM provider and its model
@@ -79,7 +61,7 @@ class ZerePyAgent:
         self.model_provider = llm_providers[0]
 
         # Load Twitter username for self-reply detection if Twitter tasks exist
-        if any("tweet" in task["name"] for task in self.tasks):
+        if any("tweet" in task["name"] for task in self.agent_config.get("tasks", [])):
             load_dotenv()
             self.username = os.getenv('TWITTER_USERNAME', '').lower()
             if not self.username:
@@ -89,48 +71,43 @@ class ZerePyAgent:
         """Construct the system prompt from agent configuration"""
         if self._system_prompt is None:
             prompt_parts = []
-            prompt_parts.extend(self.bio)
+            prompt_parts.append("Focus on technical insights about blockchain development, protocol design, and ecosystem trends.")
+            prompt_parts.append("Analyze patterns, optimizations, and architectural decisions.")
+            prompt_parts.append("Maintain a professional, analytical tone.")
+            prompt_parts.append("Do not use first or third person - focus on the technical observations themselves.")
 
-            if self.traits:
-                prompt_parts.append("\nYour key traits are:")
-                prompt_parts.extend(f"- {trait}" for trait in self.traits)
+            if self.agent_config.get("traits"):
+                prompt_parts.append("\nKey areas of focus:")
+                prompt_parts.extend(f"- {trait}" for trait in self.agent_config["traits"])
 
-            if self.examples or self.example_accounts:
-                prompt_parts.append("\nHere are some examples of your style (Please avoid repeating any of these):")
-                if self.examples:
-                    prompt_parts.extend(f"- {example}" for example in self.examples)
-
-                if self.example_accounts:
-                    for example_account in self.example_accounts:
-                        tweets = self.connection_manager.perform_action(
-                            connection_name="twitter",
-                            action_name="get-latest-tweets",
-                            params=[example_account]
-                        )
-                        if tweets:
-                            prompt_parts.extend(f"- {tweet['text']}" for tweet in tweets)
+            if self.agent_config.get("examples"):
+                prompt_parts.append("\nStyle examples (for reference, do not repeat):")
+                prompt_parts.extend(f"- {example}" for example in self.agent_config["examples"])
 
             self._system_prompt = "\n".join(prompt_parts)
 
         return self._system_prompt
     
     def _adjust_weights_for_time(self, current_hour: int, task_weights: list) -> list:
+        """Adjust task weights based on time of day"""
         weights = task_weights.copy()
+        tasks = self.agent_config.get("tasks", [])
+        multipliers = self.agent_config.get("time_based_multipliers", {})
         
         # Reduce tweet frequency during night hours (1 AM - 5 AM)
         if 1 <= current_hour <= 5:
             weights = [
-                weight * self.time_based_multipliers.get("tweet_night_multiplier", 0.4) if task["name"] == "post-tweet"
-                else weight
-                for weight, task in zip(weights, self.tasks)
+                weight * multipliers.get("tweet_night_multiplier", 0.4) 
+                if task.get("name") == "post-tweet" else weight
+                for weight, task in zip(weights, tasks)
             ]
             
-        # Increase engagement frequency during day hours (8 AM - 8 PM) (peak hours?🤔)
+        # Increase engagement frequency during day hours (8 AM - 8 PM)
         if 8 <= current_hour <= 20:
             weights = [
-                weight * self.time_based_multipliers.get("engagement_day_multiplier", 1.5) if task["name"] in ("reply-to-tweet", "like-tweet")
-                else weight
-                for weight, task in zip(weights, self.tasks)
+                weight * multipliers.get("engagement_day_multiplier", 1.5)
+                if task.get("name") in ("reply-to-tweet", "like-tweet") else weight
+                for weight, task in zip(weights, tasks)
             ]
         
         return weights
@@ -149,15 +126,22 @@ class ZerePyAgent:
         return self.connection_manager.perform_action(connection, action, **kwargs)
     
     def select_action(self, use_time_based_weights: bool = False) -> dict:
-        task_weights = [weight for weight in self.task_weights.copy()]
+        """Select an action based on task weights"""
+        tasks = self.agent_config.get("tasks", [])
+        if not tasks:
+            logger.warning("No tasks configured")
+            return {}
+            
+        # Extract weights from tasks
+        task_weights = [task.get("weight", 1) for task in tasks]
         
         if use_time_based_weights:
             current_hour = datetime.now().hour
             task_weights = self._adjust_weights_for_time(current_hour, task_weights)
         
-        return random.choices(self.tasks, weights=task_weights, k=1)[0]
+        return random.choices(tasks, weights=task_weights, k=1)[0]
 
-    def loop(self):
+    async def loop(self):
         """Main agent loop for autonomous behavior"""
         if not self.is_llm_set:
             self._setup_llm_provider()
@@ -177,18 +161,37 @@ class ZerePyAgent:
                 success = False
                 try:
                     # REPLENISH INPUTS
-                    # TODO: Add more inputs to complexify agent behavior
                     if "timeline_tweets" not in self.state or self.state["timeline_tweets"] is None or len(self.state["timeline_tweets"]) == 0:
-                        if any("tweet" in task["name"] for task in self.tasks):
+                        if any("tweet" in task["name"] for task in self.agent_config.get("tasks", [])):
                             logger.info("\n👀 READING TIMELINE")
-                            self.state["timeline_tweets"] = self.connection_manager.perform_action(
+                            timeline = self.connection_manager.perform_action(
                                 connection_name="twitter",
                                 action_name="read-timeline",
                                 params=[]
                             )
+                            
+                            # Store timeline in both state and Twitter connection
+                            self.state["timeline_tweets"] = timeline
+                            twitter_conn = self.connection_manager.connections.get('twitter')
+                            if twitter_conn:
+                                twitter_conn.timeline = timeline
+                            
+                            # Process timeline with social enhancements
+                            if timeline:
+                                logger.info("\n🔍 ANALYZING SOCIAL CONTEXT")
+                                social_context = await self.social.analyze_social_context(
+                                    self.connection_manager.connections.get('twitter'),
+                                    self.connection_manager.connections.get('twitterapi')
+                                )
+                                self.state["social_context"] = social_context
+                                logger.info("\n📊 ANALYZING MARKET CONTEXT")
+                                market_context = await self.social.analyze_market_context(
+                                    self.connection_manager.connections.get('dexscreener')
+                                )
+                                self.state["market_context"] = market_context
 
                     if "room_info" not in self.state or self.state["room_info"] is None:
-                        if any("echochambers" in task["name"] for task in self.tasks):
+                        if any("echochambers" in task["name"] for task in self.agent_config["tasks"]):
                             logger.info("\n👀 READING ECHOCHAMBERS ROOM INFO")
                             self.state["room_info"] = self.connection_manager.perform_action(
                                 connection_name="echochambers",
@@ -197,23 +200,19 @@ class ZerePyAgent:
                             )
 
                     # CHOOSE AN ACTION
-                    # TODO: Add agentic action selection
-                    
-                    action = self.select_action(use_time_based_weights=self.use_time_based_weights)
+                    action = self.select_action(use_time_based_weights=self.agent_config.get("use_time_based_weights", False))
                     action_name = action["name"]
 
                     # PERFORM ACTION
                     success = execute_action(self, action_name)
 
-                    logger.info(f"\n⏳ Waiting {self.loop_delay} seconds before next loop...")
-                    print_h_bar()
-                    time.sleep(self.loop_delay if success else 60)
+                    logger.info(f"\n⏳ Waiting {self.agent_config['loop_delay']} seconds before next loop...")
+                    time.sleep(self.agent_config['loop_delay'])
 
                 except Exception as e:
-                    logger.error(f"\n❌ Error in agent loop iteration: {e}")
-                    logger.info(f"⏳ Waiting {self.loop_delay} seconds before retrying...")
-                    time.sleep(self.loop_delay)
+                    logger.error(f"Error in agent loop: {e}")
+                    time.sleep(self.agent_config['loop_delay'])
 
         except KeyboardInterrupt:
-            logger.info("\n🛑 Agent loop stopped by user.")
+            logger.info("\n👋 Stopping agent loop...")
             return

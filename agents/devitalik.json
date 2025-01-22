@@ -46,16 +46,16 @@
             "api_key": "AAAAAAAAAAAAAAAAAAAAAHuRxgEAAAAA4LEo%2FXJvg%2BfPc2mpq%2Fssj80QS34%3DB5REP2YpiAQMnp1OBaKcvRY7rLNbhBF1leqRHXfOOwNbznxNvx"
         },
         {
+            "name": "github",
+            "repository": "blorm-network/ZerePy"
+        },
+        {
             "name": "openai",
-            "model": "gpt-4-turbo-preview"
+            "model": "gpt-4o-mini"
         },
         {
             "name": "anthropic",
             "model": "claude-3-opus-20240229"
-        },
-        {
-            "name": "github",
-            "repository": "blorm-network/ZerePy"
         },
         {
             "name": "telegram",
