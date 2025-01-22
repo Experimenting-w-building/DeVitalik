@@ -67,21 +67,25 @@ class ZerePyAgent:
             if not self.username:
                 logger.warning("Twitter username not found, some Twitter functionalities may be limited")
 
-    def _construct_system_prompt(self) -> str:
-        """Construct the system prompt from agent configuration"""
+    def _construct_system_prompt(self, context: Dict[str, Any] = None) -> str:
+        """Construct the system prompt from agent configuration and context"""
+        if context and 'tweet_style' in context:
+            # Use the provided context for style
+            return context['tweet_style']
+            
         if self._system_prompt is None:
             prompt_parts = []
-            prompt_parts.append("Focus on technical insights about blockchain development, protocol design, and ecosystem trends.")
-            prompt_parts.append("Analyze patterns, optimizations, and architectural decisions.")
-            prompt_parts.append("Maintain a professional, analytical tone.")
-            prompt_parts.append("Do not use first or third person - focus on the technical observations themselves.")
+            prompt_parts.append("Share insights that blend technical knowledge with casual, relatable observations.")
+            prompt_parts.append("Match the tone and style of the conversation while adding unique perspective.")
+            prompt_parts.append("Be engaging and natural - avoid overly technical language unless the context calls for it.")
+            prompt_parts.append("Focus on the specific topic at hand rather than forcing blockchain/technical angles.")
 
             if self.agent_config.get("traits"):
-                prompt_parts.append("\nKey areas of focus:")
+                prompt_parts.append("\nKey traits to incorporate naturally:")
                 prompt_parts.extend(f"- {trait}" for trait in self.agent_config["traits"])
 
             if self.agent_config.get("examples"):
-                prompt_parts.append("\nStyle examples (for reference, do not repeat):")
+                prompt_parts.append("\nTone examples (adapt to context):")
                 prompt_parts.extend(f"- {example}" for example in self.agent_config["examples"])
 
             self._system_prompt = "\n".join(prompt_parts)

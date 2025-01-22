@@ -378,12 +378,15 @@ class TwitterConnection(BaseConnection):
             if count is None:
                 count = self.config["timeline_read_count"]
             
+            # Get authenticated user's ID
+            credentials = self._get_credentials()
+            user_id = credentials['TWITTER_USER_ID']
+            
             # Get timeline with metrics and author info
             response = self._make_request(
                 'get',
-                'tweets/search/recent',
+                f'users/{user_id}/timelines/reverse_chronological',
                 params={
-                    'query': 'from:VitalikButerin OR to:VitalikButerin',
                     'max_results': count,
                     'tweet.fields': 'created_at,public_metrics,author_id',
                     'expansions': 'author_id',
