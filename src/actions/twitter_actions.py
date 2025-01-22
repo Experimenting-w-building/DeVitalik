@@ -78,6 +78,13 @@ def reply_to_tweet(agent, **kwargs):
         if "social_context" in agent.state and agent.state["social_context"]:
             top_discussions = agent.state["social_context"].get("interesting_discussions", [])
             
+            # Sort discussions by engagement score in descending order
+            top_discussions = sorted(
+                top_discussions,
+                key=lambda d: d.get('engagement_score', 0),
+                reverse=True
+            )
+            
             # Try to find a tweet that matches our criteria
             for discussion in top_discussions:
                 tweet = next(
@@ -115,11 +122,10 @@ def reply_to_tweet(agent, **kwargs):
         # Analyze tweet style and context
         tweet_text = selected_tweet.get('text', '')
         tweet_topics = []
-        tweet_style = "casual"  # default style
         
         # Calculate original tweet length for matching
         tweet_length = len(tweet_text)
-        target_length = min(tweet_length + 20, MAX_TWEET_LENGTH)  # Stay close to original length
+        target_length = min(tweet_length + 20, MAX_TWEET_LENGTH)
         
         if "social_context" in agent.state and agent.state["social_context"]:
             top_discussion = next(
@@ -127,43 +133,23 @@ def reply_to_tweet(agent, **kwargs):
                 {}
             )
             tweet_topics = top_discussion.get('topics', [])
-            
-            # Analyze tweet style more precisely
-            is_short = tweet_length < 50
-            has_metaphor = "," in tweet_text and len(tweet_text.split(",")) == 2
-            has_ellipsis = "..." in tweet_text
-            is_poetic = has_metaphor or any(char in tweet_text for char in ".,—")
-            
-            # Determine base style
-            if is_poetic:
-                tweet_style = "poetic"
-            elif is_short:
-                tweet_style = "concise"
-            
-            # Add modifiers based on content
-            if has_ellipsis:
-                tweet_style = f"reflective_{tweet_style}"
-            if any(topic in ['ai', 'blockchain', 'defi'] for topic in tweet_topics):
-                tweet_style = f"{tweet_style}_with_tech_awareness"
 
-        # Create context-aware style guide
+        # Create context-aware style guide that adapts to the tweet
         style_context = {
-            'tweet_style': f"""Reply to this tweet in a matching style:
+            'tweet_style': f"""Reply to this tweet by matching its style and energy:
             "{tweet_text}"
             
-            Style Guide:
-            - Match the {tweet_style} style
+            Guidelines:
+            - Mirror the tweet's tone, rhythm and format
+            - If they're using rhymes, respond with rhymes
+            - If they're being playful, be playful back
+            - If they're being technical, match that depth
             - Keep it {target_length} characters or less
-            - Mirror the original's tone and rhythm
-            - If original is short and poetic, be short and poetic
-            - If original uses metaphors, use similar literary devices
-            - Add subtle tech perspective only if relevant
-            - Focus on the human/emotional element first
+            - Make the response feel natural and authentic
             """
         }
 
         agent.logger.info(f"\n💬 GENERATING REPLY to @{selected_tweet.get('author_username', 'unknown')}: {tweet_text[:50]}...")
-        agent.logger.info(f"Style: {tweet_style} (target length: {target_length})")
         if tweet_topics:
             agent.logger.info(f"Topics: {', '.join(tweet_topics)}")
             if top_discussion:
