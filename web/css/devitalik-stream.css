@@ -1,0 +1,112 @@
+/* DeVitalik Thought Stream Styles */
+
+.devitalik-stream {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 1rem;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Thought Entry Styles */
+.thought-entry {
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Entry Types */
+.thought-entry.thinking { 
+    background: #f0f7ff;
+    border-left: 3px solid #2196f3;
+}
+
+.thought-entry.analyzing { 
+    background: #f0fff7;
+    border-left: 3px solid #4caf50;
+}
+
+.thought-entry.deciding { 
+    background: #fff7f0;
+    border-left: 3px solid #ff9800;
+}
+
+.thought-entry.action { 
+    background: #f7f0ff;
+    border-left: 3px solid #9c27b0;
+}
+
+.thought-entry.success { 
+    background: #f0ffd9;
+    border-left: 3px solid #8bc34a;
+}
+
+.thought-entry.error { 
+    background: #fff0f0;
+    border-left: 3px solid #f44336;
+}
+
+/* Entry Components */
+.thought-entry .timestamp {
+    color: #666;
+    font-size: 0.8rem;
+    margin-right: 8px;
+}
+
+.thought-entry .emoji {
+    margin: 0 8px;
+    font-size: 1.1rem;
+}
+
+.thought-entry .content {
+    font-weight: 500;
+    color: #333;
+}
+
+/* Dark Theme */
+.devitalik-stream.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme .thought-entry {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+.dark-theme .thought-entry .timestamp {
+    color: #aaa;
+}
+
+.dark-theme .thought-entry .content {
+    color: #ffffff;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar Styling */
+.devitalik-stream::-webkit-scrollbar {
+    width: 8px;
+}
+
+.devitalik-stream::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.devitalik-stream::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.devitalik-stream::-webkit-scrollbar-thumb:hover {
+    background: #555;
+} 
