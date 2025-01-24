@@ -171,6 +171,21 @@ class DiscordConnection(BaseConnection):
                 parameters=[],
                 description="Get the bot's username",
             ),
+            "get-message": Action(
+                name="get-message",
+                parameters=[
+                    ActionParameter(
+                        "channel_id",
+                        True,
+                        str,
+                        "The channel id the message is posted in",
+                    ),
+                    ActionParameter(
+                        "message_id", True, str, "ID of the message to get"
+                    ),
+                ],
+                description="List all the channels for a specified discord server",
+            )
         }
 
     def configure(self) -> bool:
@@ -253,6 +268,13 @@ class DiscordConnection(BaseConnection):
         method = getattr(self, method_name)
         return method(**kwargs)
 
+    def get_message(self, channel_id: str, message_id: str, **kwargs) -> dict:
+        request_path = f"/channels/{channel_id}/messages/{message_id}"
+        response = self._get_request(request_path)
+
+        # logger.info(f"Retrieved {len(response)} channels")
+        return response
+        
     def list_channels(self, server_id: str, **kwargs) -> dict:
         """Lists all Discord channels under the server"""
         request_path = f"/guilds/{server_id}/channels"

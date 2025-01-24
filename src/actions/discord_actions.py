@@ -1,4 +1,5 @@
 import time
+import json
 from src.action_handler import register_action
 from src.helpers import print_h_bar
 from src.constants.discord.prompts import (
@@ -68,8 +69,10 @@ def reply_to_discord_message(agent, **kwargs):
 
     # iterate through each mentioned message
     for message in mentioned_messages:
+        message_body = message["message"]
         mentioned_list = message["mentions"]
         message_id = message["id"]
+        referenced_message = message["referenced_message"]
         referencing_message = next(
             (
                 reference_messge
@@ -85,38 +88,91 @@ def reply_to_discord_message(agent, **kwargs):
         ) or (not referencing_message and len(mentioned_list) == 1)
 
         if agent_should_reply:
-            message_body = message["message"]
-            mentioned_user_id = _get_message_mentioned_user_id(message_body)
-            username = _get_user_id_username(mentioned_list, mentioned_user_id)
-            formatted_message = message_body.replace(
-                f"<@{mentioned_user_id}>", username
-            )
-
-            agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
-            print_h_bar()
-
-            prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(
-                discord_message=formatted_message
-            )
-            generated_discord_reply_message = agent.prompt_llm(prompt)
-
-            if generated_discord_reply_message:
-                agent.logger.info("\n🚀 Posting discord message reply:")
-                agent.logger.info(f"'{generated_discord_reply_message}'")
-                agent.connection_manager.perform_action(
-                    connection_name="discord",
-                    action_name="reply-to-message",
-                    params=[
-                        channel_id,
-                        message_id,
-                        generated_discord_reply_message,
-                    ],
+            # if this is a reply to a devbot message
+            if (
+                referenced_message
+                and referenced_message["author"]["username"] == bot_username
+            ):
+                mesasge_thread_history = _get_message_thread_history(
+                    agent, channel_id, message_id
                 )
-                agent.logger.info("\n✅ Discord message posted successfully!")
-                return True
+                thread_reply_message = _generate_thread_reply_message(
+                    agent, message_body, mesasge_thread_history
+                )
+                print(f"sending reply: {thread_reply_message}")
+                if thread_reply_message:
+                    return _post_discord_reply(
+                        agent, thread_reply_message, channel_id, message_id
+                    )
+            else:
+                mentioned_user_id = _get_message_mentioned_user_id(message_body)
+                username = _get_user_id_username(mentioned_list, mentioned_user_id)
+                formatted_message = message_body.replace(
+                    f"<@{mentioned_user_id}>", username
+                )
+                reply_message = _generate_mentioned_reply_message(
+                    agent, formatted_message
+                )
+                if reply_message:
+                    return _post_discord_reply(
+                        agent, reply_message, channel_id, message_id
+                    )
         else:
             agent.logger.info("\n✅ All Discord messages have a reply!")
             return True
+
+
+def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
+    message_history = []
+    message_context = agent.connection_manager.perform_action(
+        connection_name="discord",
+        action_name="get-message",
+        params=[
+            channel_id,
+            message_id,
+        ],
+    )
+    message_history.append(message_context["content"])
+    if "referenced_message" in message_context:
+        return message_history + _get_message_thread_history(
+            agent, channel_id, message_context["referenced_message"]["id"]
+        )
+
+    return message_history
+
+
+def _generate_thread_reply_message(agent, message, message_thread) -> str:
+    agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
+    print_h_bar()
+    print(f"message to reply to: {message}")
+    print(f"message thread: {message_thread}")
+    prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(
+        discord_message=message, discord_message_thread=message_thread
+    )
+    return agent.prompt_llm(prompt)
+
+
+def _generate_mentioned_reply_message(agent, message) -> str:
+    agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
+    print_h_bar()
+    prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(discord_message=message)
+    return agent.prompt_llm(prompt)
+
+
+def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
+    agent.logger.info("\n🚀 Posting discord message reply:")
+    agent.logger.info(f"'{reply_message}'")
+    agent.connection_manager.perform_action(
+        connection_name="discord",
+        action_name="reply-to-message",
+        params=[
+            channel_id,
+            message_id,
+            reply_message,
+        ],
+    )
+    agent.logger.info("\n✅ Discord message posted successfully!")
+    return True
 
 
 def _get_message_mentioned_user_id(text):
