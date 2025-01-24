@@ -40,6 +40,10 @@
       "model": "claude-3-5-sonnet-20241022"
     },
     {
+      "name": "xai",
+      "model": "grok-2-latest"
+    },    
+    {
       "name": "solana",
       "rpc": "https://api.mainnet-beta.solana.com"
     },
@@ -77,6 +81,10 @@
     {
       "name": "galadriel",
       "model": "gpt-3.5-turbo"
+    },
+    {
+      "name": "sonic",
+      "network": "mainnet"
     },
     {
       "name": "allora",

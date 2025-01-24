@@ -12,8 +12,10 @@ from src.connections.echochambers_connection import EchochambersConnection
 from src.connections.solana_connection import SolanaConnection
 from src.connections.hyperbolic_connection import HyperbolicConnection
 from src.connections.galadriel_connection import GaladrielConnection
+from src.connections.sonic_connection import SonicConnection
 from src.connections.discord_connection import DiscordConnection
 from src.connections.allora_connection import AlloraConnection
+from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
 
 logger = logging.getLogger("connection_manager")
@@ -49,10 +51,14 @@ class ConnectionManager:
             return HyperbolicConnection
         elif class_name == "galadriel":
             return GaladrielConnection
+        elif class_name == "sonic":
+            return SonicConnection
         elif class_name == "discord":
             return DiscordConnection
         elif class_name == "allora":
             return AlloraConnection
+        elif class_name == "xai":
+            return XAIConnection
         elif class_name == "ethereum":
             return EthereumConnection
         return None

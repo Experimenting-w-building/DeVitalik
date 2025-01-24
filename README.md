@@ -1,6 +1,6 @@
 # ZerePy
 
-ZerePy is an open-source Python framework designed to let you deploy your own agents on X, powered by OpenAI/Anthropic/EternalAI LLMs.
+ZerePy is an open-source Python framework designed to let you deploy your own agents on X, powered by multiple LLMs.
 
 ZerePy is built from a modularized version of the Zerebro backend. With ZerePy, you can launch your own agent with
 similar core functionality as Zerebro. For creative outputs, you'll need to fine-tune your own model.
@@ -13,17 +13,20 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 - Modular connection system
 - Blockchain integration
 
-### Onchain Activity
-
-- Solana
-- Ethereum
-- GOAT (Great Onchain Agent Toolkit)
-
-### Social Platform Integrations
-
-- Twitter/X
-- Farcaster
-- Echochambers
+### Platform Integrations
+- Social Platforms:
+  - Twitter/X
+  - Farcaster
+  - Echochambers
+  - Discord
+- Blockchain Networks:
+  - Solana
+  - EVM Networks:
+    - Ethereum
+    - Sonic 
+- AI/ML Tools:
+  - GOAT (Onchain Agent Toolkit)
+  - Allora (Network inference)
 
 ### Language Model Support
 
@@ -33,6 +36,8 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 - Ollama
 - Hyperbolic
 - Galadriel
+- Allora
+- xAI (Grok)
 
 ## Quickstart
 
@@ -66,6 +71,7 @@ Environment Variables:
 - On-chain Integration:
   - Solana: private key
   - Ethereum: private keys
+  - Sonic: private keys
 
 ## Installation
 
@@ -120,7 +126,13 @@ poetry run python main.py
    configure-connection solana     # For Solana
    configure-connection goat       # For Goat
    configure-connection galadriel  # For Galadriel
-   configure-connection ethereum # For Ethereum
+   configure-connection ethereum   # For Ethereum
+   configure-connection sonic      # For Sonic
+   configure-connection discord    # For Discord
+   configure-connection ollama     # For Ollama
+   configure-connection xai        # For Grok
+   configure-connection allora     # For Allora
+   configure-connection hyperbolic # For Hyperbolic
    ```
 
 2. Use `list-connections` to see all available connections and their status
@@ -248,67 +260,55 @@ Each plugin has its own configuration options that can be specified in the agent
 ## Platform Features
 
 ### GOAT
+- Unified EVM chain interface
+- ERC20 token management (balances, transfers, approvals)
+- Real-time crypto data and market tracking
+- Plugin system for protocol integrations
+- Multi-chain support with secure wallet management
 
-- Interact with EVM chains through a unified interface
-- Manage ERC20 tokens:
-  - Check token balances
-  - Transfer tokens
-  - Approve token spending
-  - Get token metadata (decimals, symbol, name)
-- Access real-time cryptocurrency data:
-  - Get token prices
-  - Track market data
-  - Monitor price changes
-- Extensible plugin system for future protocols
-- Secure wallet management with private key storage
-- Multi-chain support through configurable RPC endpoints
+### Blockchain Networks
+- Solana
+  - SOL/SPL transfers and swaps via Jupiter
+  - Staking and balance management
+  - Network monitoring and token queries
 
-### Solana
+- EVM Networks
+  - Ethereum
+    - ETH/ERC-20 transfers and swaps
+    - Kyberswap integration
+    - Balance and token queries
+  - Sonic
+    - Fast EVM transactions
+    - Custom slippage settings
+    - Token swaps via Sonic DEX
+    - Network switching (mainnet/testnet)
 
-- Transfer SOL and SPL tokens
-- Swap tokens using Jupiter
-- Check token balances
-- Stake SOL
-- Monitor network TPS
-- Query token information
-- Request testnet/devnet funds
+- EternalAI
+  - Transform agents to smart contracts
+  - Deploy on 10+ blockchains
+  - Onchain system prompts
+  - Decentralized inference
 
-### Ethereum
+### Social Platforms
+- Twitter/X
+  - Post and reply to tweets
+  - Timeline management
+  - Engagement features
 
-- Transfer ETH and ERC-20 Tokens
-- Swap tokens using Kyberswao
-- Check token balances
+- Farcaster
+  - Cast creation and interactions
+  - Timeline and reply management
+  - Like/requote functionality
 
-### Twitter/X
+- Discord
+  - Channel management
+  - Message operations
+  - Reaction handling
 
-- Post tweets from prompts
-- Read timeline with configurable count
-- Reply to tweets in timeline
-- Like tweets in timeline
-
-### Farcaster
-
-- Post casts
-- Reply to casts
-- Like and requote casts
-- Read timeline
-- Get cast replies
-
-### Echochambers
-
-- Post new messages to rooms
-- Reply to messages based on room context
-- Read room history
-- Get room information and topics
-
-### Discord
-
-- List channels for a server
-- Read messages from a channel
-- Read mentioned messages from a channel
-- Post new messages to a channel
-- Reply to messages in a channel
-- React to a message in a channel
+- Echochambers
+  - Room messaging and context
+  - History tracking
+  - Topic management
 
 ## Create your own agent
 
@@ -328,7 +328,7 @@ Create a new JSON file in the `agents` directory following this structure:
   ],
   "traits": ["Curious", "Creative", "Innovative", "Funny"],
   "examples": ["This is an example tweet.", "This is another example tweet."],
-  "example_accounts" : ["X_username_to_use_for_tweet_examples"]
+  "example_accounts" : ["X_username_to_use_for_tweet_examples"],
   "loop_delay": 900,
   "config": [
     {
@@ -379,10 +379,17 @@ Create a new JSON file in the `agents` directory following this structure:
       "server_id": "1234567890"
     },
     {
+      "name": "sonic",
+      "network": "mainnet"
+    },
+    {
+      "name": "allora",
+      "chain_slug": "testnet"
+    },
+    {
       "name": "ethereum",
-      "rpc": "placeholder_url.123"
+      "rpc": "https://eth.blockrazor.xyz"
     }
-
   ],
   "tasks": [
     { "name": "post-tweet", "weight": 1 },

@@ -1,4 +1,43 @@
-# Minimal ERC20 ABI containing only essential functions
+SONIC_SWAP_ABI = [
+    {
+    "anonymous": False,
+    "inputs": [
+      {
+        "indexed": True,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": False,
+        "internalType": "uint256",
+        "name": "amount0In",
+        "type": "uint256"
+      },
+      {
+        "indexed": False,
+        "internalType": "address",
+        "name": "_tokenIn",
+        "type": "address"
+      },
+      {
+        "indexed": True,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": False,
+        "internalType": "bool",
+        "name": "stable",
+        "type": "bool"
+      }
+    ],
+    "name": "Swap",
+    "type": "event"
+  }
+]
+
 ERC20_ABI = [
     {
         "constant": True,
