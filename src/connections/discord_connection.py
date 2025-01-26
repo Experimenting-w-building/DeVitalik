@@ -9,7 +9,6 @@ import json
 
 logger = logging.getLogger("connections.discord_connection")
 
-
 class DiscordConnectionError(Exception):
     """Base exception for Discord connection errors"""
 
@@ -387,7 +386,6 @@ class DiscordConnection(BaseConnection):
         """Helper method to format messages"""
         formatted_messages = []
         for message in messages:
-            # print(json.dumps(message, indent=4, separators=(',', ': ')))
             mentions = []
             for mention in message["mentions"]:
                 mentions.append({"id": mention["id"], "username": mention["username"]})
@@ -452,7 +450,6 @@ class DiscordConnection(BaseConnection):
             "Accept": "application/json",
             "Authorization": self._get_request_auth_token(),
         }
-        print(headers)
         response = requests.request("GET", url, headers=headers, data={})
         if response.status_code != 200:
             raise DiscordAPIError(

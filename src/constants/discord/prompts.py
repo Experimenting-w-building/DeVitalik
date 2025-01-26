@@ -9,4 +9,4 @@ POST_DISCORD_MESSAGE_PROMPT =  ("Generate an engaging discord message. Don't inc
 
 DISCORD_MESSAGE_REPLY_PROMPT = ("Generate a friendly, engaging reply to this discord message: {discord_message}. Keep it under 280 characters. Don't include any usernames, hashtags, links or emojis.")
 
-DISCORD_MESSAGE_THREAD_REPLY_PROMPT = ("Generate a friendly, engaging reply to this discord message: {discord_message} based on the context of this thread from new to oldest messages: {discord_message_thread}. Keep it under 280 characters. Don't include any usernames, hashtags, links or emojis.")
+DISCORD_MESSAGE_THREAD_REPLY_PROMPT = ("Generate a friendly, engaging reply to this discord message: {discord_message}. Your reply should be based on the context of this thread from new to oldest messages where you are {bot_username} and the thread is here: {discord_message_thread}. Keep it under 280 characters. Don't include any usernames, hashtags, links or emojis.")

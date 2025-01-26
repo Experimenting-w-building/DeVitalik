@@ -10,7 +10,7 @@ from src.constants.discord.prompts import (
 
 @register_action("post-discord-message")
 def post_discord_message(agent, **kwargs):
-    channel_id = agent.default_channel_id
+    channel_id = agent.discord_default_channel_id
     current_time = time.time()
 
     if "last_discord_message_time" not in agent.state:
@@ -45,23 +45,31 @@ def post_discord_message(agent, **kwargs):
 
 @register_action("reply-to-discord-message")
 def reply_to_discord_message(agent, **kwargs):
-    channel_id = agent.default_channel_id
+    channel_id = agent.discord_default_channel_id
+    # recent_messages = agent.state["discord_messages"]
+
+    # TODO: update connection method to return from class init or else call api
     bot_username = agent.connection_manager.perform_action(
         connection_name="discord",
         action_name="get-bot-username",
         params=[],
     )
 
+    # get all recent messages
+    recent_messages = agent.connection_manager.perform_action(
+        connection_name="discord",
+        action_name="read-messages",
+        params=[channel_id, 100],
+    )
+
+    # update agent's message state
+    # _update_discord_message_history_state(agent, recent_messages)
+
     # get mentioned messages
     mentioned_messages = agent.connection_manager.perform_action(
         connection_name="discord",
         action_name="read-mentioned-messages",
-        params=[channel_id, 10],
-    )
-    recent_messages = agent.connection_manager.perform_action(
-        connection_name="discord",
-        action_name="read-messages",
-        params=[channel_id, 10],
+        params=[channel_id, 100],
     )
     referenced_messages = [
         message for message in recent_messages if message["referenced_message"]
@@ -99,7 +107,6 @@ def reply_to_discord_message(agent, **kwargs):
                 thread_reply_message = _generate_thread_reply_message(
                     agent, message_body, mesasge_thread_history
                 )
-                print(f"sending reply: {thread_reply_message}")
                 if thread_reply_message:
                     return _post_discord_reply(
                         agent, thread_reply_message, channel_id, message_id
@@ -124,28 +131,35 @@ def reply_to_discord_message(agent, **kwargs):
 
 def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
     message_history = []
-    message_context = agent.connection_manager.perform_action(
-        connection_name="discord",
-        action_name="get-message",
-        params=[
-            channel_id,
-            message_id,
-        ],
-    )
-    message_history.append(message_context["content"])
-    if "referenced_message" in message_context:
-        return message_history + _get_message_thread_history(
-            agent, channel_id, message_context["referenced_message"]["id"]
+    message = {}
+    # Get message from state else call discord
+    if agent.state["discord_messages"][message_id]:
+        message = agent.state["discord_messages"][message_id]
+        message_history.append(f"{message['author']}: {message['message']}")
+    else:
+        message = agent.connection_manager.perform_action(
+            connection_name="discord",
+            action_name="get-message",
+            params=[
+                channel_id,
+                message_id,
+            ],
         )
+        # This is needed because Discord is dumb and puts "content" as 
+        #  the message field when you get a single message vs a list
+        message_history.append(f"{message['author']}: {message['content']}")
 
+    # Recursively obtain message thread from new to oldest
+    if "referenced_message" in message and message["referenced_message"]:
+        return message_history + _get_message_thread_history(
+            agent, channel_id, message["referenced_message"]["id"]
+        )
     return message_history
 
 
 def _generate_thread_reply_message(agent, message, message_thread) -> str:
-    agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
+    agent.logger.info("\n📝 GENERATING NEW DISCORD THREAD MESSAGE REPLY")
     print_h_bar()
-    print(f"message to reply to: {message}")
-    print(f"message thread: {message_thread}")
     prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(
         discord_message=message, discord_message_thread=message_thread
     )
@@ -160,7 +174,7 @@ def _generate_mentioned_reply_message(agent, message) -> str:
 
 
 def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
-    agent.logger.info("\n🚀 Posting discord message reply:")
+    agent.logger.info("\n🚀 POSTING DISCORD MESSAGE REPLY:")
     agent.logger.info(f"'{reply_message}'")
     agent.connection_manager.perform_action(
         connection_name="discord",
@@ -171,7 +185,7 @@ def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
             reply_message,
         ],
     )
-    agent.logger.info("\n✅ Discord message posted successfully!")
+    agent.logger.info("\n✅ DISCORD MESSAGE POSTED SUCCESSFULLY!")
     return True
 
 
@@ -187,3 +201,14 @@ def _get_user_id_username(mentioned_list, user_id) -> str:
         if dict_item["id"] == user_id:
             return dict_item["username"]
     return None
+
+
+def _update_discord_message_history_state(agent, messages: dict) -> dict:
+    for message in messages:
+        message_id = message["id"]
+        agent.state["discord_messages"][message["id"]] = {
+            "id": message_id,
+            "message": message["message"],
+            "timestamp": message["timestamp"],
+            "author": message["author"],
+        }

@@ -48,10 +48,10 @@ class ZerePyAgent:
             has_discord_tasks = any("discord" in task["name"] for task in agent_dict.get("tasks", []))
             discord_config = next((config for config in agent_dict["config"] if config["name"] == "discord"), None)
             if has_discord_tasks and discord_config:
-                self.message_read_count = discord_config["message_read_count"]
-                self.message_emoji_name = discord_config["message_emoji_name"]
-                self.server_id = discord_config["server_id"]
-                self.default_channel_id = discord_config["default_channel_id"]
+                self.discord_message_read_count = discord_config["message_read_count"]
+                self.discord_message_emoji_name = discord_config["message_emoji_name"]
+                self.discord_server_id = discord_config["server_id"]
+                self.discord_default_channel_id = discord_config["default_channel_id"]
                 self.discord_message_interval = discord_config["discord_message_interval"]
 
             # Twitter configuration setup
@@ -208,6 +208,28 @@ class ZerePyAgent:
                                 action_name="get-room-info",
                                 params={}
                             )
+                    
+                    if (
+                        "discord_channel_message_history" not in self.state
+                        or self.state["discord_channel_message_history"] is None
+                        or len(self.state["discord_channel_message_history"]) == 0
+                    ):
+                        if any("discord" in task["name"] for task in self.tasks):
+                            logger.info(
+                                "\n👀 READING DISCORD CHANNEL's MESSAGE HISTORY"
+                            )
+                            discord_channel_message_history = (
+                                self.connection_manager.perform_action(
+                                    connection_name="discord",
+                                    action_name="read-messages",
+                                    params=[self.discord_default_channel_id, 100],
+                                )
+                            )
+                            self.state["discord_messages"] = (
+                                self._init_discord_message_history_state(
+                                    discord_channel_message_history
+                                )
+                            )
 
                     # CHOOSE AN ACTION
                     # TODO: Add agentic action selection
@@ -230,3 +252,18 @@ class ZerePyAgent:
         except KeyboardInterrupt:
             logger.info("\n🛑 Agent loop stopped by user.")
             return
+
+    def _init_discord_message_history_state(self, messages: dict) -> dict:
+        # TODO: make this update state instead of replacing state
+        history = {}
+        for message in messages:
+            message_id = message['id']
+            history[message_id] = message
+            # {
+            #     'id': message_id,
+            #     'message': message['message'],
+            #     'timestamp': message['timestamp'],
+            #     'author': message['author'],
+            #     'referenced_message': message['referenced_message']
+            # }
+        return history
