@@ -151,6 +151,7 @@ class ZerePyAgent:
     def prompt_llm(self, prompt: str, system_prompt: str = None) -> str:
         """Generate text using the configured LLM provider"""
         system_prompt = system_prompt or self._construct_system_prompt()
+        print(system_prompt)
 
         return self.connection_manager.perform_action(
             connection_name=self.model_provider,
@@ -169,6 +170,38 @@ class ZerePyAgent:
             task_weights = self._adjust_weights_for_time(current_hour, task_weights)
         
         return random.choices(self.tasks, weights=task_weights, k=1)[0]
+
+    def generate_embeddings(self, chunks):
+        """Create embeddings using the configured LLM provider"""
+        return self.connection_manager.perform_action(
+            connection_name="openai",
+            action_name="generate-embeddings",
+            params=[chunks]
+        )
+    
+    def upload_embeddings(self, index_name, embeddings, chunks):
+        """Upload embeddings to Pinecone"""
+        return self.connection_manager.perform_action(
+            connection_name="pinecone",
+            action_name="upload-embeddings",
+            params=[index_name, embeddings, chunks]
+        )
+
+    def query_embeddings(self, index_name, query_vector, top_k=3):
+        """Query embeddings from Pinecone"""
+        return self.connection_manager.perform_action(
+            connection_name="pinecone",
+            action_name="query-embeddings",
+            params=[index_name, query_vector, top_k]
+        )
+
+    def chunk_text(self, text: str, max_tokens=300):
+        words = text.split()
+        chunks = []
+        for i in range(0, len(words), max_tokens):
+            chunk = ' '.join(words[i:i + max_tokens])
+            chunks.append(chunk)
+        return chunks
 
     def loop(self):
         """Main agent loop for autonomous behavior"""

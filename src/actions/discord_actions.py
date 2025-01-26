@@ -5,6 +5,7 @@ from src.helpers import print_h_bar
 from src.constants.discord.prompts import (
     POST_DISCORD_MESSAGE_PROMPT,
     DISCORD_MESSAGE_REPLY_PROMPT,
+    PINECONE_RESULTS_ZEREPY_PROMPT
 )
 
 
@@ -23,6 +24,7 @@ def post_discord_message(agent, **kwargs):
         print_h_bar()
 
         prompt = POST_DISCORD_MESSAGE_PROMPT.format(agent_name=agent.name)
+
         generated_discord_message = agent.prompt_llm(prompt)
 
         if generated_discord_message:
@@ -79,6 +81,8 @@ def reply_to_discord_message(agent, **kwargs):
 
         if agent_should_reply:
             # if this is a reply to a devbot message
+            pinecone_results = _get_pinecone_results(agent, message_body)
+
             if (
                 referenced_message
                 and referenced_message["author"]["username"] == bot_username
@@ -87,7 +91,7 @@ def reply_to_discord_message(agent, **kwargs):
                     agent, channel_id, message_id
                 )
                 thread_reply_message = _generate_thread_reply_message(
-                    agent, message_body, mesasge_thread_history
+                    agent, message_body, mesasge_thread_history, pinecone_results, bot_username
                 )
                 if thread_reply_message:
                     return _post_discord_reply(
@@ -100,7 +104,7 @@ def reply_to_discord_message(agent, **kwargs):
                     f"<@{mentioned_user_id}>", username
                 )
                 reply_message = _generate_mentioned_reply_message(
-                    agent, formatted_message
+                    agent, formatted_message, pinecone_results
                 )
                 if reply_message:
                     return _post_discord_reply(
@@ -139,20 +143,20 @@ def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
     return message_history
 
 
-def _generate_thread_reply_message(agent, message, message_thread) -> str:
+def _generate_thread_reply_message(agent, message, message_thread, pinecone_results, bot_username) -> str:
     agent.logger.info("\n📝 GENERATING NEW DISCORD THREAD MESSAGE REPLY")
     print_h_bar()
     prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(
-        discord_message=message, discord_message_thread=message_thread
+        discord_message=message, discord_message_thread=message_thread, bot_username=bot_username
     )
-    return agent.prompt_llm(prompt)
+    return agent.prompt_llm(prompt, system_prompt=pinecone_results)
 
 
-def _generate_mentioned_reply_message(agent, message) -> str:
+def _generate_mentioned_reply_message(agent, message, pinecone_results) -> str:
     agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
     print_h_bar()
     prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(discord_message=message)
-    return agent.prompt_llm(prompt)
+    return agent.prompt_llm(prompt, system_prompt=pinecone_results)
 
 
 def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
@@ -203,3 +207,10 @@ def _get_mentioned_messages(bot_username, messages):
             if mention["username"] == bot_username:
                 mentioned_messages.append(message)
     return mentioned_messages
+
+def _get_pinecone_results(agent, message):
+    message_embedding = agent.generate_embeddings([message])
+    pinecone_results = agent.query_embeddings("blorm-network-zerepy", message_embedding)
+    return PINECONE_RESULTS_ZEREPY_PROMPT.format(
+        pinecone_results=pinecone_results
+    )

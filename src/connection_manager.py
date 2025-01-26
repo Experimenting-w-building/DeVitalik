@@ -17,6 +17,8 @@ from src.connections.discord_connection import DiscordConnection
 from src.connections.allora_connection import AlloraConnection
 from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
+from src.connections.github_connection import GitHubConnection
+from src.connections.pinecone_connection import PineconeConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -61,7 +63,12 @@ class ConnectionManager:
             return XAIConnection
         elif class_name == "ethereum":
             return EthereumConnection
+        elif class_name == "github":
+            return GitHubConnection
+        elif class_name == "pinecone":
+            return PineconeConnection
         return None
+    
 
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:
         """

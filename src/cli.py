@@ -12,6 +12,7 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from src.agent import ZerePyAgent
 from src.helpers import print_h_bar
+from src.api import API
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -198,6 +199,17 @@ class ZerePyCLI:
                 tips=["You can also use Ctrl+D to exit"],
                 handler=self.exit,
                 aliases=['quit', 'q']
+            )
+        )
+
+        # API command
+        self._register_command(
+            Command(
+                name="start-api",
+                description="Start the FastAPI server for chatbot operations.",
+                tips=["Use this command to start the API server."],
+                handler=self.start_api,
+                aliases=['api']
             )
         )
 
@@ -537,6 +549,14 @@ class ZerePyCLI:
         """Exit the CLI gracefully"""
         logger.info("\nGoodbye! 👋")
         sys.exit(0)
+
+    async def start_api(self, host="0.0.0.0", port=8000):
+        """Start the FastAPI server"""
+        try:
+            api = API(self.agent)
+            await api.run()
+        except Exception as e:
+            logger.error(f"Error starting API. Error: {e}")
 
 
     ###################

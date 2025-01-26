@@ -102,6 +102,9 @@
       "default_channel_id": "1327792083599228971",
       "discord_message_interval": 5400
 
+    },
+    {
+      "name": "pinecone"
     }
   ],
   "tasks": [
