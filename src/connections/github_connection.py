@@ -21,7 +21,6 @@ class GitHubConnection(BaseConnection):
         load_dotenv(Path('../../.env'))  # Try two levels up
         
         self.token = os.getenv('GITHUB_TOKEN')
-        logger.info(self.token)
         if not self.token:
             raise ValueError("GitHub token not found in environment variables")
             
@@ -56,7 +55,6 @@ class GitHubConnection(BaseConnection):
 
     async def get_repo(self) -> str:
         """Get current repository statistics and process repository content"""
-        logger.info("working")
         await self.setup()
 
         def is_allowed_filetype(filename):
