@@ -158,7 +158,6 @@ def _generate_thread_reply_message(
         discord_message_thread=message_thread,
         bot_username=bot_username,
     )
-    print(prompt)
     return agent.prompt_llm(prompt, system_prompt=pinecone_results)
 
 
@@ -166,7 +165,6 @@ def _generate_mentioned_reply_message(agent, message, pinecone_results) -> str:
     agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
     print_h_bar()
     prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(discord_message=message)
-    print(prompt)
     return agent.prompt_llm(prompt, system_prompt=pinecone_results)
 
 
