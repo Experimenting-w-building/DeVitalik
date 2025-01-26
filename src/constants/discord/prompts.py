@@ -11,7 +11,13 @@ POST_DISCORD_MESSAGE_PROMPT = (
 
 DISCORD_MESSAGE_REPLY_PROMPT = "Give me a direct answer, without anything else, for this discord message: {discord_message}. Keep it under 2000 characters. Don't include any usernames, hashtags, links or emojis."
 
-DISCORD_MESSAGE_THREAD_REPLY_PROMPT = "Give me a direct answer, without anything else, for this discord message: {discord_message}. Your reply should be based on the context of this thread from new to oldest messages where you are {bot_username} and the thread is here: {discord_message_thread}. Keep it under 2000 characters. Don't include any usernames, hashtags, links or emojis."
+# DISCORD_MESSAGE_THREAD_REPLY_PROMPT = "Give me a direct answer, without anything else, for this discord message: {discord_message}. Your reply should be based on the context of this thread from new to oldest messages where you are {bot_username} and the thread is here: {discord_message_thread}. Keep it under 2000 characters. Don't include any usernames, hashtags, links or emojis."
+DISCORD_MESSAGE_THREAD_REPLY_PROMPT = (
+    "Given the context of this message thread (from new to old): {discord_message_thread} and this new message: {discord_message}, give me a direct reply I can use."
+    "Your username is {bot_username} in the message thread."
+    "You can use the additional date provided in the request if it makes sense to."
+    "Keep it under 2000 characters. Don't include any usernames, hashtags, links or emojis."
+)
 
 PINECONE_RESULTS_ZEREPY_PROMPT = (
     "Generate a detailed explanation using the following search results about the Zerepy repository: {pinecone_results}"
