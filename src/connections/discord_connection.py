@@ -9,6 +9,7 @@ import json
 
 logger = logging.getLogger("connections.discord_connection")
 
+
 class DiscordConnectionError(Exception):
     """Base exception for Discord connection errors"""
 
@@ -184,7 +185,7 @@ class DiscordConnection(BaseConnection):
                     ),
                 ],
                 description="List all the channels for a specified discord server",
-            )
+            ),
         }
 
     def configure(self) -> bool:
@@ -275,7 +276,7 @@ class DiscordConnection(BaseConnection):
 
         # logger.info(f"Retrieved {len(response)} channels")
         return response
-        
+
     def list_channels(self, server_id: str, **kwargs) -> dict:
         """Lists all Discord channels under the server"""
         request_path = f"/guilds/{server_id}/channels"
@@ -351,10 +352,9 @@ class DiscordConnection(BaseConnection):
 
         logger.info("Reacted to message successfully")
         return
-    
+
     def get_bot_username(self) -> str:
         return self.bot_username
-        
 
     def _format_reply_message(self, reply_message: dict) -> dict:
         """Helper method to format reply messages"""
@@ -398,7 +398,7 @@ class DiscordConnection(BaseConnection):
                 "message": message["content"],
                 "timestamp": message["timestamp"],
                 "mentions": mentions,
-                "referenced_message": message.get("referenced_message", [])
+                "referenced_message": message.get("referenced_message", []),
             }
             formatted_messages.append(formatted_message)
         return formatted_messages

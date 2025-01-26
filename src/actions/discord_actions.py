@@ -47,13 +47,11 @@ def post_discord_message(agent, **kwargs):
 def reply_to_discord_message(agent, **kwargs):
     channel_id = agent.discord_default_channel_id
     recent_messages = list(agent.state["discord_messages"].values())
-
     bot_username = agent.connection_manager.perform_action(
         connection_name="discord",
         action_name="get-bot-username",
         params=[],
     )
-
     mentioned_messages = _get_mentioned_messages(bot_username, recent_messages)
     referenced_messages = [
         message for message in recent_messages if message["referenced_message"]
