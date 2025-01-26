@@ -127,7 +127,7 @@ def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
                 message_id,
             ],
         )
-        # This is needed because Discord puts "content" as 
+        # This is needed because Discord puts "content" as
         #  the message field when you get a single message vs a list
         message_history.append(f"{message['author']}: {message['content']}")
 
@@ -193,6 +193,8 @@ def _update_discord_message_history_state(agent, messages: dict) -> dict:
             "timestamp": message["timestamp"],
             "author": message["author"],
         }
+
+
 def _get_mentioned_messages(bot_username, messages):
     """Helper method to filter for messages that mention the bot"""
     mentioned_messages = []
