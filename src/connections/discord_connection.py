@@ -231,6 +231,8 @@ class DiscordConnection(BaseConnection):
             api_key = os.getenv("DISCORD_TOKEN")
             if not api_key:
                 return False
+            elif self.bot_username:
+                return True
 
             self._test_connection(api_key)
             return True
@@ -472,7 +474,6 @@ class DiscordConnection(BaseConnection):
                 )
 
             self.bot_username = json.loads(response.text)["username"]
-
         except Exception as e:
             raise DiscordConnectionError(f"Connection test failed: {e}")
 

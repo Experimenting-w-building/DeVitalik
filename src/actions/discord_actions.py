@@ -46,31 +46,15 @@ def post_discord_message(agent, **kwargs):
 @register_action("reply-to-discord-message")
 def reply_to_discord_message(agent, **kwargs):
     channel_id = agent.discord_default_channel_id
-    # recent_messages = agent.state["discord_messages"]
+    recent_messages = list(agent.state["discord_messages"].values())
 
-    # TODO: update connection method to return from class init or else call api
     bot_username = agent.connection_manager.perform_action(
         connection_name="discord",
         action_name="get-bot-username",
         params=[],
     )
 
-    # get all recent messages
-    recent_messages = agent.connection_manager.perform_action(
-        connection_name="discord",
-        action_name="read-messages",
-        params=[channel_id, 100],
-    )
-
-    # update agent's message state
-    # _update_discord_message_history_state(agent, recent_messages)
-
-    # get mentioned messages
-    mentioned_messages = agent.connection_manager.perform_action(
-        connection_name="discord",
-        action_name="read-mentioned-messages",
-        params=[channel_id, 100],
-    )
+    mentioned_messages = _get_mentioned_messages(bot_username, recent_messages)
     referenced_messages = [
         message for message in recent_messages if message["referenced_message"]
     ]
@@ -145,7 +129,7 @@ def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
                 message_id,
             ],
         )
-        # This is needed because Discord is dumb and puts "content" as 
+        # This is needed because Discord puts "content" as 
         #  the message field when you get a single message vs a list
         message_history.append(f"{message['author']}: {message['content']}")
 
@@ -174,8 +158,7 @@ def _generate_mentioned_reply_message(agent, message) -> str:
 
 
 def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
-    agent.logger.info("\n🚀 POSTING DISCORD MESSAGE REPLY:")
-    agent.logger.info(f"'{reply_message}'")
+    agent.logger.info(f"\n🚀 POSTING DISCORD MESSAGE REPLY: {reply_message}")
     agent.connection_manager.perform_action(
         connection_name="discord",
         action_name="reply-to-message",
@@ -212,3 +195,11 @@ def _update_discord_message_history_state(agent, messages: dict) -> dict:
             "timestamp": message["timestamp"],
             "author": message["author"],
         }
+def _get_mentioned_messages(bot_username, messages):
+    """Helper method to filter for messages that mention the bot"""
+    mentioned_messages = []
+    for message in messages:
+        for mention in message["mentions"]:
+            if mention["username"] == bot_username:
+                mentioned_messages.append(message)
+    return mentioned_messages
