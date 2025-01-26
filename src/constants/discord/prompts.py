@@ -9,16 +9,21 @@ POST_DISCORD_MESSAGE_PROMPT = (
     "discord messages that were given as example. Avoid the words AI and crypto."
 )
 
-DISCORD_MESSAGE_REPLY_PROMPT = 'Give me a direct answer, without anything else, for this discord message: "{discord_message}". Keep it under 2000 characters. Don\'t include any usernames, hashtags, links or emojis.'
+DISCORD_MESSAGE_REPLY_PROMPT = (
+    'Generate only a reply message for this message someone is sending me: "{discord_message}".'
+    "Only give me the reply message."
+    "Keep it under 2000 characters. Don't include any usernames, hashtags, links or emojis."
+)
+
 
 DISCORD_MESSAGE_THREAD_REPLY_PROMPT = (
-    'Given the context of this message thread (from new to old): {discord_message_thread} and this new message: "{discord_message}", give me a direct reply I can use.'
+    'Given the context of this message thread (from new to old): {discord_message_thread} and this new message: "{discord_message}", generate an engaging reply message.'
     "Your username is {bot_username} in the message thread."
-    "You can use the additional date provided in the request if it makes sense to."
+    "Only give me the reply message."
     "Keep it under 2000 characters. Don't include any usernames, hashtags, links or emojis."
 )
 
 PINECONE_RESULTS_ZEREPY_PROMPT = (
-    "Generate a detailed explanation using the following search results about the Zerepy repository: {pinecone_results}"
+    "Generate a detailed explanation using the following search results about the Zerepy repository: {pinecone_results}."
     "The explanation should be clear, concise, and informative, providing insights into the repository's relevance and content."
 )
