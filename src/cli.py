@@ -13,6 +13,7 @@ from prompt_toolkit.history import FileHistory
 from src.agent import ZerePyAgent
 from src.helpers import print_h_bar
 from src.api import API
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -256,11 +257,13 @@ class ZerePyCLI:
         """Parse and handle a command input"""
         input_list = input_string.split()
         command_string = input_list[0].lower()
-
         try:
             command = self.commands.get(command_string)
             if command:
-                command.handler(input_list)
+                if asyncio.iscoroutinefunction(command.handler):
+                    asyncio.run(command.handler(input_list))
+                else:
+                    command.handler(input_list)
             else:
                 self._handle_unknown_command(command_string)
         except Exception as e:
@@ -557,6 +560,7 @@ class ZerePyCLI:
             await api.run()
         except Exception as e:
             logger.error(f"Error starting API. Error: {e}")
+
 
 
     ###################

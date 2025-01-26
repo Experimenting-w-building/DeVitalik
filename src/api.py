@@ -37,6 +37,7 @@ class API:
             index_name = self.agent.connection_manager.connections["github"].repo.replace('/', '-').lower()
             
             pinecone_results = self.agent.query_embeddings(index_name, res)
+            logger.info(pinecone_results)
 
             openai_response = self.agent.prompt_llm(query, pinecone_results)
 
