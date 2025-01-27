@@ -4,6 +4,8 @@ from typing import Dict, Any
 from dotenv import load_dotenv, set_key
 from openai import OpenAI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+import re
+
 
 logger = logging.getLogger("connections.openai_connection")
 
@@ -149,8 +151,8 @@ class OpenAIConnection(BaseConnection):
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
+                    # {"role": "developer", "content": f"Formatting re-enabled {system_prompt}"},
+                    {"role": "user", "content": f"Formatting re-enabled. {prompt}. Here is a developer prompt to help you make an answer: {system_prompt}. Keep your response under 2000 characters."},
                 ],
             )
 
