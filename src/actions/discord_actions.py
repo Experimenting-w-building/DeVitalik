@@ -131,9 +131,8 @@ def reply_to_discord_message(agent, **kwargs):
                         return _post_discord_reply(
                             agent, reply_message, channel_id, message_id
                         )
-        else:
-            agent.logger.info("\n✅ All Discord messages have a reply!")
-            return True
+    agent.logger.info("\n✅ All Discord messages have a reply!")
+    return True
 
 
 # Method to break down long replies and post chunked messages to discord
@@ -245,18 +244,7 @@ def _get_user_id_username(mentioned_list, user_id) -> str:
     return None
 
 
-def _update_discord_message_history_state(agent, messages: dict) -> dict:
-    for message in messages:
-        message_id = message["id"]
-        agent.state["discord_messages"][message["id"]] = {
-            "id": message_id,
-            "message": message["message"],
-            "timestamp": message["timestamp"],
-            "author": message["author"],
-        }
-
-
-def _get_mentioned_messages(bot_username, messages):
+def _get_mentioned_messages(bot_username, messages) -> dict:
     """Helper method to filter for messages that mention the bot"""
     mentioned_messages = []
     for message in messages:

@@ -345,11 +345,4 @@ class ZerePyAgent:
         for message in messages:
             message_id = message["id"]
             history[message_id] = message
-            # {
-            #     'id': message_id,
-            #     'message': message['message'],
-            #     'timestamp': message['timestamp'],
-            #     'author': message['author'],
-            #     'referenced_message': message['referenced_message']
-            # }
         return history
