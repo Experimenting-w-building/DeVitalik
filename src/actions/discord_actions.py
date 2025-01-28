@@ -8,6 +8,7 @@ from src.constants.discord.prompts import (
     DISCORD_MESSAGE_THREAD_REPLY_PROMPT,
     PINECONE_RESULTS_ZEREPY_PROMPT,
 )
+from langchain.text_splitter import CharacterTextSplitter
 
 
 @register_action("post-discord-message")
@@ -48,6 +49,7 @@ def post_discord_message(agent, **kwargs):
 
 @register_action("reply-to-discord-message")
 def reply_to_discord_message(agent, **kwargs):
+    max_discord_reply_length = 2000
     channel_id = agent.discord_default_channel_id
     recent_messages = list(agent.state["discord_messages"].values())
     bot_username = agent.connection_manager.perform_action(
@@ -78,10 +80,14 @@ def reply_to_discord_message(agent, **kwargs):
             referencing_message
             and len(mentioned_list) == 1
             and referencing_message["author"] != bot_username
-        ) or (not referencing_message and len(mentioned_list) == 1)
+            and message["author"] != bot_username
+        ) or (
+            not referencing_message
+            and len(mentioned_list) == 1
+            and message["author"] != bot_username
+        )
 
         if agent_should_reply:
-            # if this is a reply to a devbot message
             pinecone_results = _get_pinecone_results(agent, message_body)
 
             if (
@@ -99,9 +105,14 @@ def reply_to_discord_message(agent, **kwargs):
                     bot_username,
                 )
                 if thread_reply_message:
-                    return _post_discord_reply(
-                        agent, thread_reply_message, channel_id, message_id
-                    )
+                    if len(thread_reply_message) > max_discord_reply_length:
+                        _post_long_discord_message(
+                            agent, channel_id, message_id, thread_reply_message
+                        )
+                    else:
+                        return _post_discord_reply(
+                            agent, thread_reply_message, channel_id, message_id
+                        )
             else:
                 mentioned_user_id = _get_message_mentioned_user_id(message_body)
                 username = _get_user_id_username(mentioned_list, mentioned_user_id)
@@ -112,12 +123,49 @@ def reply_to_discord_message(agent, **kwargs):
                     agent, formatted_message, pinecone_results
                 )
                 if reply_message:
-                    return _post_discord_reply(
-                        agent, reply_message, channel_id, message_id
-                    )
+                    if len(reply_message) > max_discord_reply_length:
+                        _post_long_discord_message(
+                            agent, channel_id, message_id, reply_message
+                        )
+                    else:
+                        return _post_discord_reply(
+                            agent, reply_message, channel_id, message_id
+                        )
         else:
             agent.logger.info("\n✅ All Discord messages have a reply!")
             return True
+
+
+# Method to break down long replies and post chunked messages to discord
+def _post_long_discord_message(agent, channel_id, message_id, reply_message):
+    latest_thread_message_id = message_id
+    chunks = _split_markdown_by_size(reply_message)
+    for chunk in chunks:
+        if len(chunk) > 2000:
+            chunk_split = split_by_size(chunk, 2000)
+            for split in chunk_split:
+                response = _post_discord_reply(
+                    agent, chunk, channel_id, latest_thread_message_id
+                )
+                # capture message id so that the next chunk is a reply to itself, continuing the thread
+                latest_thread_message_id = response["id"]
+        else:
+            response = _post_discord_reply(
+                agent, chunk, channel_id, latest_thread_message_id
+            )
+            # capture message id so that the next chunk is a reply to itself, continuing the thread
+            latest_thread_message_id = response["id"]
+
+def split_by_size(string, size):
+    return [string[i:i + size] for i in range(0, len(string), size)]
+
+# Method to break down a markdown file by character size
+def _split_markdown_by_size(markdown_text, chunk_size=2000, chunk_overlap=0):
+    text_splitter = CharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+    chunks = text_splitter.split_text(markdown_text)
+    return chunks
 
 
 def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
@@ -168,9 +216,9 @@ def _generate_mentioned_reply_message(agent, message, pinecone_results) -> str:
     return agent.prompt_llm(prompt, system_prompt=pinecone_results)
 
 
-def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
+def _post_discord_reply(agent, reply_message, channel_id, message_id) -> dict:
     agent.logger.info(f"\n🚀 POSTING DISCORD MESSAGE REPLY: {reply_message}")
-    agent.connection_manager.perform_action(
+    response = agent.connection_manager.perform_action(
         connection_name="discord",
         action_name="reply-to-message",
         params=[
@@ -180,7 +228,7 @@ def _post_discord_reply(agent, reply_message, channel_id, message_id) -> bool:
         ],
     )
     agent.logger.info("\n✅ DISCORD MESSAGE POSTED SUCCESSFULLY!")
-    return True
+    return response
 
 
 def _get_message_mentioned_user_id(text):
