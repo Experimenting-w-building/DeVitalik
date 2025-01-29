@@ -144,8 +144,9 @@ class OpenAIConnection(BaseConnection):
         try:
             client = self._get_client()
             
+            
             # Use configured model if none provided
-            if not model:
+            if not model or model == "None":
                 model = self.config["model"]
 
             completion = client.chat.completions.create(
