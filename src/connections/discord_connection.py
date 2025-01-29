@@ -33,6 +33,7 @@ class DiscordConnection(BaseConnection):
         super().__init__(config)
         self.base_url = "https://discord.com/api/v10"
         self.bot_username = None
+        self.bot_id = None
 
     @property
     def is_llm_provider(self) -> bool:
@@ -166,10 +167,10 @@ class DiscordConnection(BaseConnection):
                 ],
                 description="List all the channels for a specified discord server",
             ),
-            "get-bot-username": Action(
-                name="get-bot-username",
+            "get-bot-metadata": Action(
+                name="get-bot-metadata",
                 parameters=[],
-                description="Get the bot's username",
+                description="Get the bot's metadata",
             ),
             "get-message": Action(
                 name="get-message",
@@ -232,7 +233,7 @@ class DiscordConnection(BaseConnection):
             api_key = os.getenv("DISCORD_TOKEN")
             if not api_key:
                 return False
-            elif self.bot_username:
+            elif self.bot_username and self.bot_id:
                 return True
 
             self._test_connection(api_key)
@@ -353,8 +354,8 @@ class DiscordConnection(BaseConnection):
         logger.info("Reacted to message successfully")
         return
 
-    def get_bot_username(self) -> str:
-        return self.bot_username
+    def get_bot_metadata(self) -> dict:
+        return {"username": self.bot_username, "id": self.bot_id}
 
     def _format_reply_message(self, reply_message: dict) -> dict:
         """Helper method to format reply messages"""
@@ -365,6 +366,7 @@ class DiscordConnection(BaseConnection):
             "id": reply_message["id"],
             "channel_id": reply_message["channel_id"],
             "author": reply_message["author"]["username"],
+            "author_id": reply_message["author"]["id"],
             "content": reply_message["content"],
             "timestamp": reply_message["timestamp"],
             "mentions": mentions,
@@ -395,6 +397,7 @@ class DiscordConnection(BaseConnection):
                 "id": message["id"],
                 "channel_id": message["channel_id"],
                 "author": message["author"]["username"],
+                "author_id": message["author"]["id"],
                 "message": message["content"],
                 "timestamp": message["timestamp"],
                 "mentions": mentions,
@@ -473,7 +476,9 @@ class DiscordConnection(BaseConnection):
                     f"Failed to call GET to Discord: {response.status_code} - {response.text}"
                 )
 
-            self.bot_username = json.loads(response.text)["username"]
+            response_json = json.loads(response.text)
+            self.bot_username = response_json["username"]
+            self.bot_id = response_json["id"]
         except Exception as e:
             raise DiscordConnectionError(f"Connection test failed: {e}")
 
@@ -493,6 +498,6 @@ class DiscordConnection(BaseConnection):
         filtered_data = []
         for item in data:
             for mention in item["mentions"]:
-                if mention["username"] == self.bot_username:
+                if mention["id"] == self.bot_id:
                     filtered_data.append(item)
         return filtered_data

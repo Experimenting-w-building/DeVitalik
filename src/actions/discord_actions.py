@@ -52,12 +52,14 @@ def reply_to_discord_message(agent, **kwargs):
     max_discord_reply_length = 2000
     channel_id = agent.discord_default_channel_id
     recent_messages = list(agent.state["discord_messages"].values())
-    bot_username = agent.connection_manager.perform_action(
+    bot_metadata = agent.connection_manager.perform_action(
         connection_name="discord",
-        action_name="get-bot-username",
+        action_name="get-bot-metadata",
         params=[],
     )
-    mentioned_messages = _get_mentioned_messages(bot_username, recent_messages)
+    bot_username = bot_metadata['username']
+    bot_id = bot_metadata['id']
+    mentioned_messages = _get_mentioned_messages(bot_id, recent_messages)
     referenced_messages = [
         message for message in recent_messages if message["referenced_message"]
     ]
@@ -79,12 +81,12 @@ def reply_to_discord_message(agent, **kwargs):
         agent_should_reply = (
             referencing_message
             and len(mentioned_list) == 1
-            and referencing_message["author"] != bot_username
-            and message["author"] != bot_username
+            and referencing_message["author_id"] != bot_id
+            and message["author_id"] != bot_id
         ) or (
             not referencing_message
             and len(mentioned_list) == 1
-            and message["author"] != bot_username
+            and message["author_id"] != bot_id
         )
 
         if agent_should_reply:
@@ -92,7 +94,7 @@ def reply_to_discord_message(agent, **kwargs):
 
             if (
                 referenced_message
-                and referenced_message["author"]["username"] == bot_username
+                and referenced_message["author"]["id"] == bot_id
             ):
                 mesasge_thread_history = _get_message_thread_history(
                     agent, channel_id, message_id
@@ -173,7 +175,7 @@ def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
     # Get message from state else call discord
     if agent.state["discord_messages"][message_id]:
         message = agent.state["discord_messages"][message_id]
-        message_history.append(f"{message['author']}: {message['message']}")
+        message_history.append(f"{message['author_id']}: {message['message']}")
     else:
         message = agent.connection_manager.perform_action(
             connection_name="discord",
@@ -185,7 +187,7 @@ def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
         )
         # This is needed because Discord puts "content" as
         #  the message field when you get a single message vs a list
-        message_history.append(f"{message['author']}: {message['content']}")
+        message_history.append(f"{message['author_id']}: {message['content']}")
 
     # Recursively obtain message thread from new to oldest
     if "referenced_message" in message and message["referenced_message"]:
@@ -244,12 +246,12 @@ def _get_user_id_username(mentioned_list, user_id) -> str:
     return None
 
 
-def _get_mentioned_messages(bot_username, messages) -> dict:
+def _get_mentioned_messages(bot_id, messages) -> dict:
     """Helper method to filter for messages that mention the bot"""
     mentioned_messages = []
     for message in messages:
         for mention in message["mentions"]:
-            if mention["username"] == bot_username:
+            if mention["id"] == bot_id:
                 mentioned_messages.append(message)
     return mentioned_messages
 
