@@ -4,6 +4,7 @@ import time
 import logging
 import os
 from pathlib import Path
+from src.helpers.sqlite._init_ import SQLiteHelper
 from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
@@ -112,6 +113,9 @@ class ZerePyAgent:
 
             # Set up empty agent state
             self.state = {}
+
+            # Set up SQLITE db
+            self.sqlite = SQLiteHelper()
 
         except Exception as e:
             logger.error("Could not load ZerePy agent")

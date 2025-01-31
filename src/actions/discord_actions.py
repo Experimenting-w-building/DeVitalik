@@ -11,8 +11,7 @@ from src.constants.discord.prompts import (
     PINECONE_RESULTS_ZEREPY_PROMPT,
     INTENT_FROM_MESSAGE
 )
-from langchain.text_splitter import CharacterTextSplitter
-
+from datetime import datetime
 
 @register_action("post-discord-message")
 def post_discord_message(agent, **kwargs):
@@ -140,6 +139,8 @@ def reply_to_discord_message(agent, **kwargs):
                             agent, reply_message, channel_id, message_id
                         )
     agent.logger.info("\n✅ All Discord messages have a reply!")
+    log_entry = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "INFO", "All Discord messages have a reply!")
+    agent.sqlite.insert_log(log_entry)
     return True
 
 
@@ -245,6 +246,8 @@ def _post_discord_reply(agent, reply_message, channel_id, message_id) -> dict:
         ],
     )
     agent.logger.info("\n✅ DISCORD MESSAGE POSTED SUCCESSFULLY!")
+    log_entry = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "INFO", "Discord messages posted!")
+    agent.sqlite.insert_log(log_entry)
     return response
 
 

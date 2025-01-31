@@ -62,6 +62,17 @@ class ZerePyCLI:
             )
         )
 
+        # SQLITE logs command
+        self._register_command(
+            Command(
+                name="logs",
+                description="Clears the terminal screen.",
+                tips=["Use this command to clean up your terminal view"],
+                handler=self.logs,
+                aliases=['log']
+            )
+        )
+
         # Clear command
         self._register_command(
             Command(
@@ -390,7 +401,7 @@ class ZerePyCLI:
         else:
             self._show_general_help()
 
-    def clear_screen(self, input_list: List[str]) -> None:
+    def clear_screen(self) -> None:
         """Clear the terminal screen"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self._print_welcome_message(clearing=True)
@@ -560,6 +571,11 @@ class ZerePyCLI:
             await api.run()
         except Exception as e:
             logger.error(f"Error starting API. Error: {e}")
+
+    def logs(self, input_list: List[str]) -> None:
+        results = self.agent.sqlite.get_logs()
+        for row in results:
+            logger.info(row)
 
 
 
