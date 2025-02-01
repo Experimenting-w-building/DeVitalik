@@ -21,6 +21,3 @@ COPY . .
 
 # Create a shell script to run your application
 RUN echo '#!/bin/bash\npoetry run python main.py\nwhile true; do sleep 30; done' > /start.sh && chmod +x /start.sh
-
-# Specify the command to run your application
-CMD ["/start.sh"]
