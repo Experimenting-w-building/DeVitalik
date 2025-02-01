@@ -18,6 +18,3 @@ RUN poetry install --no-root
 
 # Copy the rest of your application code into the container
 COPY . .
-
-# Specify the command to run your application
-CMD ["poetry", "run", "python", "main.py"]
