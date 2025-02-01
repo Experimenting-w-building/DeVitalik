@@ -20,4 +20,4 @@ RUN poetry install --no-root
 COPY . .
 
 # Specify the command to run your application
-CMD ["poetry", "run", "python", "main.py"]
+CMD ["/bin/bash"]
