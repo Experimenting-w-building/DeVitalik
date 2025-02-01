@@ -11,6 +11,7 @@ from src.constants.discord.prompts import (
     PINECONE_RESULTS_ZEREPY_PROMPT,
     INTENT_FROM_MESSAGE
 )
+from langchain.text_splitter import CharacterTextSplitter
 from datetime import datetime
 
 @register_action("post-discord-message")
