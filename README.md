@@ -24,6 +24,8 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
   - EVM Networks:
     - Ethereum
     - Sonic 
+    - Generalized EVM Connection supporting Base, Polygon, and Ethereum
+      - Easily add whichever else
 - AI/ML Tools:
   - GOAT (Onchain Agent Toolkit)
   - Allora (Network inference)
@@ -38,6 +40,8 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 - Galadriel
 - Allora
 - xAI (Grok)
+- GROQ API
+- Together AI
 
 ## Quickstart
 
@@ -53,7 +57,7 @@ https://replit.com/@blormdev/ZerePy?v=1
 
 System:
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - Poetry 1.5 or higher
 
 Environment Variables:
@@ -64,6 +68,8 @@ Environment Variables:
   - EternalAI: https://eternalai.oerg/api
   - Hyperbolic: https://app.hyperbolic.xyz
   - Galadriel: https://dashboard.galadriel.com
+  - GROQ: https://console.groq.com/
+  - Together AI: https://api.together.xyz
 - Social (based on your needs):
   - X API: https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret
   - Farcaster: Warpcast recovery phrase
@@ -126,13 +132,15 @@ poetry run python main.py
    configure-connection solana     # For Solana
    configure-connection goat       # For Goat
    configure-connection galadriel  # For Galadriel
-   configure-connection ethereum   # For Ethereum
+   configure-connection evm        # For EVM
    configure-connection sonic      # For Sonic
    configure-connection discord    # For Discord
    configure-connection ollama     # For Ollama
    configure-connection xai        # For Grok
    configure-connection allora     # For Allora
    configure-connection hyperbolic # For Hyperbolic
+   configure-connection groq       # For GROQ
+   configure-connection together   # For Together AI
    ```
 
 2. Use `list-connections` to see all available connections and their status
@@ -273,7 +281,7 @@ Each plugin has its own configuration options that can be specified in the agent
   - Network monitoring and token queries
 
 - EVM Networks
-  - Ethereum
+  - Ethereum/Base/Polygon
     - ETH/ERC-20 transfers and swaps
     - Kyberswap integration
     - Balance and token queries
@@ -387,8 +395,8 @@ Create a new JSON file in the `agents` directory following this structure:
       "chain_slug": "testnet"
     },
     {
-      "name": "ethereum",
-      "rpc": "https://eth.blockrazor.xyz"
+      "name": "evm",
+      "rpc": "ethereum"
     }
   ],
   "tasks": [

@@ -44,6 +44,10 @@
       "model": "grok-2-latest"
     },    
     {
+      "name": "together",
+      "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+    },    
+    {
       "name": "solana",
       "rpc": "https://api.mainnet-beta.solana.com"
     },
@@ -75,6 +79,11 @@
       ]
     },
     {
+      "name": "groq",
+      "model": "llama-3.3-70b-versatile",
+      "temperature": 0.5
+    },
+    {
       "name": "hyperbolic",
       "model": "meta-llama/Meta-Llama-3-70B-Instruct"
     },
@@ -91,9 +100,10 @@
       "chain_slug": "testnet"
     },
     {
-      "name": "ethereum",
-      "rpc": "https://eth.blockrazor.xyz"  
-    },
+      "name": "evm",
+      "network": "ethereum"
+     },
+    
     {
       "name": "discord",
       "message_read_count": 10,

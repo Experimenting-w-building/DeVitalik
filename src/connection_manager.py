@@ -4,6 +4,7 @@ from src.connections.base_connection import BaseConnection
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
 from src.connections.goat_connection import GoatConnection
+from src.connections.groq_connection import GroqConnection
 from src.connections.openai_connection import OpenAIConnection
 from src.connections.twitter_connection import TwitterConnection
 from src.connections.farcaster_connection import FarcasterConnection
@@ -19,6 +20,8 @@ from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
 from src.connections.github_connection import GitHubConnection
 from src.connections.pinecone_connection import PineconeConnection
+from src.connections.together_connection import TogetherAIConnection
+from src.connections.evm_connection import EVMConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -39,6 +42,8 @@ class ConnectionManager:
             return OpenAIConnection
         elif class_name == "farcaster":
             return FarcasterConnection
+        elif class_name == "groq":
+            return GroqConnection
         elif class_name == "eternalai":
             return EternalAIConnection
         elif class_name == "ollama":
@@ -67,6 +72,10 @@ class ConnectionManager:
             return GitHubConnection
         elif class_name == "pinecone":
             return PineconeConnection
+        elif class_name == "together":
+            return TogetherAIConnection
+        elif class_name == "evm":
+            return EVMConnection
         return None
     
 
