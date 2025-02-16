@@ -194,14 +194,14 @@ class ZerePyAgent:
 
         return weights
 
-    def prompt_llm(self, prompt: str, system_prompt: str = None, model: str = None) -> str:
+    def prompt_llm(self, prompt: str, system_prompt: str = None, model: str = None, assistant: str = None) -> str:
         """Generate text using the configured LLM provider"""
         system_prompt = system_prompt or self._construct_system_prompt()
 
         return self.connection_manager.perform_action(
             connection_name=self.model_provider,
             action_name="generate-text",
-            params=[prompt, system_prompt, model],
+            params=[prompt, system_prompt, model, assistant],
         )
 
     def perform_action(self, connection: str, action: str, **kwargs) -> None:

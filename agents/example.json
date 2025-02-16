@@ -33,7 +33,7 @@
     },
     {
       "name": "openai",
-      "model": "o1-mini"
+      "model": "o3-mini"
     },
     {
       "name": "anthropic",
@@ -99,7 +99,7 @@
       "message_read_count": 10,
       "message_emoji_name": "❤️",
       "server_id": "1327792083599228968",
-      "default_channel_id": "1333180143081885819",
+      "default_channel_id": "1334298970171773029",
       "discord_message_interval": 5400
     },
     {

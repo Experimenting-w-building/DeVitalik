@@ -4,15 +4,11 @@ from src.action_handler import register_action
 from src.helpers import print_h_bar
 from src.constants.discord.prompts import (
     POST_DISCORD_MESSAGE_PROMPT,
-    DISCORD_MESSAGE_REPLY_PROMPT,
-    DISCORD_MESSAGE_THREAD_REPLY_PROMPT,
-    DISCORD_MESSAGE_THREAD_REPLY_PROMPT_UNDER1000,
-    DISCORD_MESSAGE_REPLY_PROMPT_UNDER1000,
-    PINECONE_RESULTS_ZEREPY_PROMPT,
-    INTENT_FROM_MESSAGE
+    ZEREPY_SYSTEM_PROMPT,
 )
 from langchain.text_splitter import CharacterTextSplitter
 from datetime import datetime
+
 
 @register_action("post-discord-message")
 def post_discord_message(agent, **kwargs):
@@ -60,8 +56,8 @@ def reply_to_discord_message(agent, **kwargs):
         action_name="get-bot-metadata",
         params=[],
     )
-    bot_username = bot_metadata['username']
-    bot_id = bot_metadata['id']
+    bot_username = bot_metadata["username"]
+    bot_id = bot_metadata["id"]
     mentioned_messages = _get_mentioned_messages(bot_id, recent_messages)
     referenced_messages = [
         message for message in recent_messages if message["referenced_message"]
@@ -94,13 +90,11 @@ def reply_to_discord_message(agent, **kwargs):
 
         if agent_should_reply:
             pinecone_results = _get_pinecone_results(agent, message_body)
+            system_prompt = ZEREPY_SYSTEM_PROMPT.format(
+                pinecone_results=pinecone_results
+            )
 
-            model = _get_intent_with_model(agent, message_body)
-
-            if (
-                referenced_message
-                and referenced_message["author"]["id"] == bot_id
-            ):
+            if referenced_message and referenced_message["author"]["id"] == bot_id:
                 mesasge_thread_history = _get_message_thread_history(
                     agent, channel_id, message_id
                 )
@@ -108,9 +102,9 @@ def reply_to_discord_message(agent, **kwargs):
                     agent,
                     message_body,
                     mesasge_thread_history,
-                    pinecone_results,
+                    system_prompt,
                     bot_username,
-                    model=model
+                    mesasge_thread_history,
                 )
                 if thread_reply_message:
                     if len(thread_reply_message) > max_discord_reply_length:
@@ -128,7 +122,7 @@ def reply_to_discord_message(agent, **kwargs):
                     f"<@{mentioned_user_id}>", username
                 )
                 reply_message = _generate_mentioned_reply_message(
-                    agent, formatted_message, pinecone_results, model
+                    agent, formatted_message, system_prompt
                 )
                 if reply_message:
                     if len(reply_message) > max_discord_reply_length:
@@ -140,7 +134,11 @@ def reply_to_discord_message(agent, **kwargs):
                             agent, reply_message, channel_id, message_id
                         )
     agent.logger.info("\n✅ All Discord messages have a reply!")
-    log_entry = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "INFO", "All Discord messages have a reply!")
+    log_entry = (
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "INFO",
+        "All Discord messages have a reply!",
+    )
     agent.sqlite.insert_log(log_entry)
     return True
 
@@ -154,7 +152,7 @@ def _post_long_discord_message(agent, channel_id, message_id, reply_message):
             chunk_split = split_by_size(chunk, 2000)
             for split in chunk_split:
                 response = _post_discord_reply(
-                    agent, chunk, channel_id, latest_thread_message_id
+                    agent, split, channel_id, latest_thread_message_id
                 )
                 # capture message id so that the next chunk is a reply to itself, continuing the thread
                 latest_thread_message_id = response["id"]
@@ -165,8 +163,10 @@ def _post_long_discord_message(agent, channel_id, message_id, reply_message):
             # capture message id so that the next chunk is a reply to itself, continuing the thread
             latest_thread_message_id = response["id"]
 
+
 def split_by_size(string, size):
-    return [string[i:i + size] for i in range(0, len(string), size)]
+    return [string[i : i + size] for i in range(0, len(string), size)]
+
 
 # Method to break down a markdown file by character size
 def _split_markdown_by_size(markdown_text, chunk_size=2000, chunk_overlap=0):
@@ -206,33 +206,17 @@ def _get_message_thread_history(agent, channel_id, message_id) -> [str]:
 
 
 def _generate_thread_reply_message(
-    agent, message, message_thread, pinecone_results, bot_username, model
+    agent, message, message_thread, system_prompt, bot_username, assistant
 ) -> str:
     agent.logger.info("\n📝 GENERATING NEW DISCORD THREAD MESSAGE REPLY")
     print_h_bar()
-    if model == "o1-mini":
-        prompt = DISCORD_MESSAGE_THREAD_REPLY_PROMPT.format(
-            discord_message=message,
-            discord_message_thread=message_thread,
-            bot_username=bot_username,
-        )
-    else:
-        prompt = DISCORD_MESSAGE_THREAD_REPLY_PROMPT_UNDER1000.format(
-            discord_message=message,
-            discord_message_thread=message_thread,
-            bot_username=bot_username,
-        )
-    return agent.prompt_llm(prompt, system_prompt=pinecone_results, model=model)
+    return agent.prompt_llm(message, system_prompt=system_prompt, assistant=assistant)
 
 
-def _generate_mentioned_reply_message(agent, message, pinecone_results, model) -> str:
+def _generate_mentioned_reply_message(agent, message, system_prompt) -> str:
     agent.logger.info("\n📝 GENERATING NEW DISCORD MESSAGE REPLY")
     print_h_bar()
-    if model == "o1-mini":
-        prompt = DISCORD_MESSAGE_REPLY_PROMPT.format(discord_message=message)
-    else:
-        prompt = DISCORD_MESSAGE_REPLY_PROMPT_UNDER1000.format(discord_message=message)  
-    return agent.prompt_llm(prompt, system_prompt=pinecone_results, model=model)
+    return agent.prompt_llm(message, system_prompt=system_prompt)
 
 
 def _post_discord_reply(agent, reply_message, channel_id, message_id) -> dict:
@@ -247,7 +231,11 @@ def _post_discord_reply(agent, reply_message, channel_id, message_id) -> dict:
         ],
     )
     agent.logger.info("\n✅ DISCORD MESSAGE POSTED SUCCESSFULLY!")
-    log_entry = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "INFO", "Discord messages posted!")
+    log_entry = (
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "INFO",
+        "Discord messages posted!",
+    )
     agent.sqlite.insert_log(log_entry)
     return response
 
@@ -279,11 +267,4 @@ def _get_mentioned_messages(bot_id, messages) -> dict:
 def _get_pinecone_results(agent, message):
     message_embedding = agent.generate_embeddings([message])
     pinecone_results = agent.query_embeddings("blorm-network-zerepy", message_embedding)
-    return PINECONE_RESULTS_ZEREPY_PROMPT.format(pinecone_results=pinecone_results)
-
-
-def _get_intent_with_model(agent, message):
-    system_prompt = INTENT_FROM_MESSAGE.format(message=message)
-    res = agent.prompt_llm(message, system_prompt, "gpt-4o-mini")
-    print(res)
-    return res
+    return pinecone_results

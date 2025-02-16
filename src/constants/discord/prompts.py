@@ -9,41 +9,12 @@ POST_DISCORD_MESSAGE_PROMPT = (
     "discord messages that were given as example. Avoid the words AI and crypto. "
 )
 
-DISCORD_MESSAGE_REPLY_PROMPT = (
-    'Generate only a reply message under 2000 characters for this message someone is sending me: "{discord_message}". '
-    "Only give me the reply message. "
-    "Don't include any usernames, hashtags, links or emojis. "
-)
-
-DISCORD_MESSAGE_REPLY_PROMPT_UNDER1000 = (
-    'Generate only a reply message under 1000 characters for this message someone is sending me: "{discord_message}". '
-    "Only give me the reply message. "
-    "Don't include any usernames, hashtags, links or emojis. "
-)
-
-
-DISCORD_MESSAGE_THREAD_REPLY_PROMPT = (
-    'Here is a message conversation someone is having from new to oldest messages: "{discord_message_thread}" and someone just asked: {discord_message}. '
-    'Generate a reply under 2000 characters to the latest message such that it makes sense given the entire conversation. '
-    'Don\'t include any usernames, hashtags, links or emojis. '
-)
-
-DISCORD_MESSAGE_THREAD_REPLY_PROMPT_UNDER1000 = (
-    'Here is a message conversation someone is having from new to oldest messages: "{discord_message_thread}" and someone just asked: {discord_message}. '
-    'Generate a reply under 1000 characters to the latest message such that it makes sense given the entire conversation.'
-    'Don\'t include any usernames, hashtags, links or emojis. '
-)
-
-PINECONE_RESULTS_ZEREPY_PROMPT = (
-    "Generate a detailed explanation using the following search results about the Zerepy repository: {pinecone_results}. Keep it under 2000 characters."
+ZEREPY_SYSTEM_PROMPT = (
+    "If the conversation is casual, provide a casual response not related to Zerepy. "
+    "If the conversation is a developer question, create a detailed explanation using the following search results about the Zerepy repository: {pinecone_results}. "
     "The explanation should be clear, concise, and informative, providing insights into the repository's relevance and content. "
-    "You should provide code examples when asked."
-)
-
-INTENT_FROM_MESSAGE = (
-    "Classify the conversation as either a casual conversation or a serious developer question and respond with 'gpt-4o-mini' if it's a casual conversation or respond with 'o1-mini' if it's a serious developer question."
-    "If it's a casual conversation, respond with 'gpt-4o-mini'. "
-    "If it's a serious developer question, respond with 'o1-mini'. "
-    "ONLY respond with 'gpt-4o-mini' or 'o1-mini'"
-    "The message to classify is: {message}"
+    "You should provide code examples when asked. "
+    "Your focus is to provide key information about Zerepy's repository only. "
+    "Don\'t include any links. "
+    "Your responses are in markdown format."
 )
